@@ -1,0 +1,73 @@
+---
+title: "Thunderstrom Analysis"
+output: html_notebook
+---
+**Imports**
+```{r}
+library(evd); 
+library(evdbayes);
+library(coda);  
+```
+
+
+**Loading the Data**
+
+```{r}
+load("../data/CAPE_Minder_Rychener_Malsot.RData")
+load("../data/NINO34.RData")
+load("../data/SRH_Minder_Rychener_Malsot.RData")
+```
+
+**Generate PROD**
+```{r}
+prod = sqrt(cape)*srh
+plot(prod)
+```
+
+**Beginning the Analysis**
+```{r}
+# get the number of datapoints per month 
+n.ppm = 30*24/3;
+# get the monthly maxima of prod
+m1 <- apply(matrix(prod, ncol=n.ppm), 1, max)
+# produce the gumbel qq plot
+qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",
+       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles",) 
+```
+The qq plot looks very nice. We expect a good result from fitting the gevd distribution.
+
+```{r}
+# fit gevd with MLE and produce diagnostic plots
+fitmax.MLE<-fgev(m1,method="Nelder-Mead")
+par(mfrow=c(2,2))
+fitmax.MLE
+plot(fitmax.MLE)
+```
+
+```{r}
+# fit gevd with Bayesian Techniques
+# use the previous outputs (rounded) as initial values (use a different shape)
+init<-c(1.6e4,4e3,0.1)
+# arbitrary priors
+mat <- diag(c(10000,10000,100)) 
+pn <- prior.norm(mean=c(0,0,0),cov=mat)
+# proposal standard deviation (found by trial and error to get 20%<acceptance rate<40%)
+psd<-c(500,0.05,0.02)
+# draw 3k samples from markov chain
+post<-posterior(3000,init=init,prior=pn,lh="gev",data=m1,psd=psd)
+# diagnostic plots
+MCMC<-mcmc(post) 
+plot(MCMC) 
+attr(MCMC,"ar")
+```
+
+**Todo for 1:**
+do autocorrelation analysis
+
+
+
+
+
+
+
+
