@@ -35,6 +35,7 @@ qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",
        xlab = "Theoretical Quantiles", ylab = "Sample Quantiles",) 
 ```
 The qq plot looks very nice. We expect a good result from fitting the gevd distribution.
+Also, the shape parameter seems to be 0, since we observe a straight line on the Q-Q Plot.
 
 ```{r}
 # fit gevd with MLE and produce diagnostic plots
@@ -54,16 +55,25 @@ pn <- prior.norm(mean=c(0,0,0),cov=mat)
 # proposal standard deviation (found by trial and error to get 20%<acceptance rate<40%)
 psd<-c(500,0.05,0.02)
 # draw 3k samples from markov chain
-post<-posterior(3000,init=init,prior=pn,lh="gev",data=m1,psd=psd)
+nit = 30000
+thinning = 300
+post<-posterior(nit, init=init,prior=pn,lh="gev",data=m1,psd=psd)
 # diagnostic plots
-MCMC<-mcmc(post) 
+MCMC<-mcmc(post[1:nit %% thinning == 0, ], thin=300) 
 plot(MCMC) 
 attr(MCMC,"ar")
+
 ```
+We observe a negative shape parameter, which is surprising when comparing with the 
+Q-Q plot shown above. Estimation with other methods will have to be considered 
+in order to see whether it is consistently estimated.
 
-**Todo for 1:**
-do autocorrelation analysis
-
+```{r}
+#MCMC_stab <- mcmc(post, thin=50, start=1000)
+acf(post[1:nit %% thinning == 0, ][-c(1:5),])
+```
+We observe that there seem to be no substantial issues from the autocorrelation 
+plots. 
 
 
 
