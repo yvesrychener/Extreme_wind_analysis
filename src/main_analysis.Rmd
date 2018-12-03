@@ -193,25 +193,31 @@ bayes_fitter = function(x,
                         psd = c(500,0.1,0.1), # Proposed SDev
                         nit = 3000, # Nb Iterations
                         thinning = 50, # Thinning Factor
-                        do_plots = FALSE, # Bool whether to show plot
+                        do_diagn = FALSE, # Bool whether to show diagnostic plots
+                        do_autoreg = FALSE, # Bool whether to show autoreg plots
                         seed = 42 # Seed 
                         ) {
   set.seed(seed)                
   pn = prior.norm(mean=c(0,0,0),cov=mat)
   post = posterior(nit, init=init, prior=pn, lh="gev", data=x, psd=psd)
   
-  if(do_plots) {
+  if(do_diagn) {
     MCMC<-mcmc(post[1:nit %% thinning == 0, ]) 
     plot(MCMC) 
+  }
+  if(do_autoreg) {
+    acf(mcmc(post[1:nit %% thinning == 0, ]))
   }
   list(posterior = post, 
        acceptance_rate = attr(mcmc(post),"ar"))
 }
 
-monthly_bayes_fit = lapply(monthly_max, bayes_fitter, do_plots = TRUE,
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter, do_diagn = TRUE, do_autoreg = FALSE,
                            psd = c(500,0.3,0.3), nit=30000, thinning = 300)
 acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1,])
 print(acceptance_rates)
+
+
 
 ```
 
