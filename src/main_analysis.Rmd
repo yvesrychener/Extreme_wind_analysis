@@ -6,7 +6,10 @@ output: html_notebook
 ```{r}
 library(evd); 
 library(evdbayes);
-library(coda);  
+library(coda);
+library(ismev);
+library(xts);
+
 ```
 
 
@@ -21,18 +24,47 @@ load("../data/SRH_Minder_Rychener_Malsot.RData")
 **Generate PROD**
 ```{r}
 prod = sqrt(cape)*srh
-plot(prod)
 ```
 
+
+
+
+** Create Time Series Objects **
+```{r}
+dates <- seq.Date(as.Date("1979-1-1"), as.Date("2015-12-31"), by=1)
+feb29ix <- format(as.Date(dates), "%m-%d") == "02-29"
+dates <- dates[!feb29ix]
+
+prod_ts = xts(prod, order.by = rep(dates, each=8))
+```
+
+
+
 **Beginning the Analysis**
+```{r}
+get_monthly = function(x) {
+  output = list()
+  len = nrow(x)
+  for (i in 1:12) {
+    output[[i]] = x[1:len %% 12 + i == i,]
+  }
+  names(output) = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
+  output
+}
+
+monthly_max = get_monthly(apply.monthly(prod_ts, max))
+r = 2
+r_monthly_max = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasing=T)[1:r]))
+```
+
+
 ```{r}
 # get the number of datapoints per month 
 n.ppm = 30*24/3;
 # get the monthly maxima of prod
-m1 <- apply(matrix(prod, ncol=n.ppm), 1, max)
+m1 = as.data.frame(apply.monthly(prod_ts, max))$V1;
 # produce the gumbel qq plot
-qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",
-       xlab = "Theoretical Quantiles", ylab = "Sample Quantiles",) 
+qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles",) ;
 ```
 The qq plot looks very nice. We expect a good result from fitting the gevd distribution.
 Also, the shape parameter seems to be 0, since we observe a straight line on the Q-Q Plot.
@@ -53,7 +85,7 @@ init<-c(1.6e4,4e3,0.1)
 mat <- diag(c(10000,10000,100)) 
 pn <- prior.norm(mean=c(0,0,0),cov=mat)
 # proposal standard deviation (found by trial and error to get 20%<acceptance rate<40%)
-psd<-c(500,0.05,0.02)
+psd<-c(500,0.03,0.02)
 # draw 3k samples from markov chain
 nit = 30000
 thinning = 300
@@ -61,7 +93,7 @@ post<-posterior(nit, init=init,prior=pn,lh="gev",data=m1,psd=psd)
 # diagnostic plots
 MCMC<-mcmc(post[1:nit %% thinning == 0, ], thin=300) 
 plot(MCMC) 
-attr(MCMC,"ar")
+attr(mcmc(post),"ar")
 
 ```
 We observe a negative shape parameter, which is surprising when comparing with the 
@@ -70,14 +102,33 @@ in order to see whether it is consistently estimated.
 
 ```{r}
 #MCMC_stab <- mcmc(post, thin=50, start=1000)
-acf(post[1:nit %% thinning == 0, ][-c(1:5),])
+acf(mcmc(post[1:nit %% thinning == 0, ]))
 ```
 We observe that there seem to be no substantial issues from the autocorrelation 
 plots. 
 
+```{r}
+apply(mcmc(post[1:nit %% thinning == 0, ]),2,mean)
+apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
+
+```
 
 
+```{r}
+# fit the r largest method
+#rl = rlarg.fit(data)
+data(venice)
+venfit <- rlarg.fit(venice[,-1])
+```
 
 
+**PART 2**
+```{r}
+#plot the maximum as a function of ENSO
+plot(nino34,m1,main = "Comparison of Monthly Maxima of PROD vs ENSO",xlab = "ENSO", ylab = "Monthly Maxima of PROD")
+n_years = length(m1)/12
+month_indexes = rep(c(1,2,3,4,5,6,7,8,9,10,11,12),n_years)
+plot(month_indexes,m1,main = "Monthly Maxima of PROD",xlab = "Month", ylab = "Monthly Maxima of PROD")
+```
 
 
