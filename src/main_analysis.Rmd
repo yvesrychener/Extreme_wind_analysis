@@ -42,6 +42,7 @@ prod_ts = xts(prod, order.by = rep(dates, each=8))
 
 **Beginning the Analysis**
 ```{r}
+month_names = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
 get_monthly = function(x) {
   output = list()
   len = nrow(x)
@@ -54,7 +55,7 @@ get_monthly = function(x) {
   for (i in 1:12) {
     output[[i]] = x[month == monthlist[i],]
   }
-  names(output) = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
+  names(output) = month_names
   return(output)
 }
 
@@ -68,7 +69,15 @@ r_monthly_max = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasi
 # get the monthly maxima of prod
 m1 = as.data.frame(apply.monthly(prod_ts, max))$V1;
 # produce the gumbel qq plot
-qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles") ;
+gumbel_qq = function(x, title="") qqplot(qgumbel(c(1:length(x))/(length(x)+1)),
+                                         x,
+                                         main = paste("Gumbell Q-Q Plot", title),
+                                         xlab = "Theoretical Quantiles", 
+                                         ylab = "Sample Quantiles") ;
+
+gumbel_qq(m1)
+
+#qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles") ;
 ```
 The qq plot doesn't fit very well, especially in the lower tail. This is likely due
 to seasonal dependence.
@@ -120,11 +129,91 @@ apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
 
 ```
 
-** Fit per month only **
+** Fit with MLE for months separately**
 ```{r}
-monthly_fits = lapply(monthly_max, fgev, method="Nelder-Mead")
+#monthly_fits = lapply(monthly_max, 
+#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+monthly_fits = list()
+error_cases = c(9, 12)
+for (i in 1:length(monthly_max)) {
+  print(i)
+  
+  if (i %in% error_cases) {
+    monthly_fits[[i]] = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             std.err = FALSE)
+  }
+  else {
+    monthly_fits[[i]] = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead")
+  }
+}
+names(monthly_fits) = names(monthly_max)
+
 ```
 
+```{r}
+gumbel_qq(data.frame(monthly_max[[9]])[,1], "September")
+gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
+```
+```{r}
+get_se = function(x, ix) {
+  if (is.null(x$std.err)) 0
+  else x$std.err[ix]
+}
+mle_loc = unlist(lapply(monthly_fits, function(x) x$estimate[1]))
+mle_loc_se = unlist(lapply(monthly_fits, get_se, 1))
+mle_scale = unlist(lapply(monthly_fits, function(x) x$estimate[2]))
+mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
+mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
+mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
+```
+
+```{r}
+plot_w_err = function(x, y, se, title = NULL) {
+  max_ix = which.max(y)
+  min_ix = which.min(y)
+  plot(x, y,
+       ylim = c(y[min_ix] - se[min_ix], y[max_ix] + se[max_ix]),
+       main = title)
+  arrows(x,y-se,x,y+se, code=3, length=0.02, angle = 90)
+}
+plot_w_err(1:12, mle_loc, mle_loc_se, "Location Parameter as Estimated with Likelihood")
+plot_w_err(1:12, mle_scale, mle_scale_se, "Scale Parameter as Estimated with Likelihood")
+plot_w_err(1:12, mle_shape, mle_shape_se, "Shape Parameter as Estimated with Likelihood")
+
+```
+
+** Fit with Bayesian Methods for months separately**
+```{r}
+
+bayes_fitter = function(x, 
+                        init = c(1e3, 1e3, 0.1), # Initial values
+                        mat = diag(c(10000,10000,100)),
+                        psd = c(500,0.1,0.1), # Proposed SDev
+                        nit = 3000, # Nb Iterations
+                        thinning = 50, # Thinning Factor
+                        do_plots = FALSE, # Bool whether to show plot
+                        seed = 42 # Seed 
+                        ) {
+  set.seed(seed)                
+  pn = prior.norm(mean=c(0,0,0),cov=mat)
+  post = posterior(nit, init=init, prior=pn, lh="gev", data=x, psd=psd)
+  
+  if(do_plots) {
+    MCMC<-mcmc(post[1:nit %% thinning == 0, ]) 
+    plot(MCMC) 
+  }
+  list(posterior = post, 
+       acceptance_rate = attr(mcmc(post),"ar"))
+}
+
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter, do_plots = TRUE,
+                           psd = c(500,0.3,0.3), nit=30000, thinning = 300)
+acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1,])
+print(acceptance_rates)
+
+```
 
 
 
