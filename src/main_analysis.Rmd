@@ -50,9 +50,9 @@ get_monthly = function(x) {
   month = time(x)
   month = gsub("....-", "", month)
   month = gsub("-..", "", month)
-  month = gsub("0","", month)
+  monthlist = unique(month)
   for (i in 1:12) {
-    output[[i]] = x[month == i,]
+    output[[i]] = x[month == monthlist[i],]
   }
   names(output) = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
   return(output)
@@ -122,7 +122,7 @@ apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
 
 ** Fit per month only **
 ```{r}
-monthly_fits = lapply(monthly_max, fgev, method="Nelder-Mead", std.err=FALSE)
+monthly_fits = lapply(monthly_max, fgev, method="Nelder-Mead")
 ```
 
 
