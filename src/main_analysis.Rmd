@@ -45,11 +45,17 @@ prod_ts = xts(prod, order.by = rep(dates, each=8))
 get_monthly = function(x) {
   output = list()
   len = nrow(x)
+  
+  # Get month of element
+  month = time(x)
+  month = gsub("....-", "", month)
+  month = gsub("-..", "", month)
+  month = gsub("0","", month)
   for (i in 1:12) {
-    output[[i]] = x[1:len %% 12 + i == i,]
+    output[[i]] = x[month == i,]
   }
   names(output) = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
-  output
+  return(output)
 }
 
 monthly_max = get_monthly(apply.monthly(prod_ts, max))
@@ -59,16 +65,15 @@ r_monthly_max = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasi
 
 
 ```{r}
-# get the number of datapoints per month 
-n.ppm = 30*24/3;
 # get the monthly maxima of prod
 m1 = as.data.frame(apply.monthly(prod_ts, max))$V1;
 # produce the gumbel qq plot
-qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles",) ;
+qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles") ;
 ```
-The qq plot looks very nice. We expect a good result from fitting the gevd distribution.
-Also, the shape parameter seems to be 0, since we observe a straight line on the Q-Q Plot.
+The qq plot doesn't fit very well, especially in the lower tail. This is likely due
+to seasonal dependence.
 
+**Fitting GEV to the entire data**
 ```{r}
 # fit gevd with MLE and produce diagnostic plots
 fitmax.MLE<-fgev(m1,method="Nelder-Mead")
@@ -76,6 +81,10 @@ par(mfrow=c(2,2))
 fitmax.MLE
 plot(fitmax.MLE)
 ```
+Poor fit, probably because the distribution isn't stationary. This is especially 
+visible in the Probability plot, in which the confidence band is surpassed, 
+indicating a poor fit.
+
 
 ```{r}
 # fit gevd with Bayesian Techniques
@@ -96,9 +105,7 @@ plot(MCMC)
 attr(mcmc(post),"ar")
 
 ```
-We observe a negative shape parameter, which is surprising when comparing with the 
-Q-Q plot shown above. Estimation with other methods will have to be considered 
-in order to see whether it is consistently estimated.
+
 
 ```{r}
 #MCMC_stab <- mcmc(post, thin=50, start=1000)
@@ -112,6 +119,13 @@ apply(mcmc(post[1:nit %% thinning == 0, ]),2,mean)
 apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
 
 ```
+
+** Fit per month only **
+```{r}
+monthly_fits = lapply(monthly_max, fgev, method="Nelder-Mead", std.err=FALSE)
+```
+
+
 
 
 ```{r}
@@ -130,5 +144,23 @@ n_years = length(m1)/12
 month_indexes = rep(c(1,2,3,4,5,6,7,8,9,10,11,12),n_years)
 plot(month_indexes,m1,main = "Monthly Maxima of PROD",xlab = "Month", ylab = "Monthly Maxima of PROD")
 ```
+```{r}
+# plot the chi plot for dependance analysis
+dat.m1_month = cbind(m1,month_indexes);
+dat.m1_nino = cbind(m1,nino34);
+chiplot(dat.m1_month);
+chiplot(dat.m1_nino);
+```
 
 
+
+**PART 3**
+We will now analyse temporal clustering of extremes. For this, we will use the exiplot function from the evd library.
+
+```{r}
+# get sample quantiles (used as plotting thresholds)
+prod.quantiles = quantile(prod, c(0.8, 0.85, 0.9, 0.95,0.99,0.999))
+exiplot(prod,prod.quantiles,main = "Analyiss of Extremal clustering",xlab = "Threshold", ylab = "Extremal Index")
+```
+
+We observe that the extremal index is ~0.2, we can therefore conclude that we have strong dependance of extremes, with the limiting mean cluster size being roughly 5. The clustering has no effect for estimaters based on the (monthly) maximum, but the r largest estimator is influenced by it.
