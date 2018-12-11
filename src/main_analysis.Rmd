@@ -222,23 +222,73 @@ print(acceptance_rates)
 ```
 
 
+TODO-> R largest fit
 
-```{r}
-# fit the r largest method
-#rl = rlarg.fit(data)
-data(venice)
-venfit <- rlarg.fit(venice[,-1])
-```
 
 
 **PART 2**
+First, we check if the location parameter depends on time using a likelyhood ratio test
 ```{r}
-#plot the maximum as a function of ENSO
-plot(nino34,m1,main = "Comparison of Monthly Maxima of PROD vs ENSO",xlab = "ENSO", ylab = "Monthly Maxima of PROD")
-n_years = length(m1)/12
-month_indexes = rep(c(1,2,3,4,5,6,7,8,9,10,11,12),n_years)
-plot(month_indexes,m1,main = "Monthly Maxima of PROD",xlab = "Month", ylab = "Monthly Maxima of PROD")
+#monthly_fits = lapply(monthly_max, 
+#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+ratios = list()
+trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
+trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
+error_cases = c(9, 12)
+for (i in 1:length(monthly_max)) {
+  print(i)
+  
+  fit_const = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             std.err = FALSE)
+  fit_dependant = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             nsloc = trend,
+                             std.err = FALSE)
+  
+  ratios[[i]] = fit_const$dev-fit_dependant$dev 
+}
+names(ratios) = names(monthly_max)
+chi_95level = qchisq(0.95,1)
+
+plot(unlist(ratios),main="95% confidence test for time independance", xlab="Month",ylab="Likelyhood Ratio Statistic")
+abline(a=chi_95level,b=0,col="red")
+
 ```
+
+Now, let's check for independance from ENSO
+```{r}
+#monthly_fits = lapply(monthly_max, 
+#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+ratios = list()
+# split nino data into months
+n = nino34
+dim(n)=c(12,length(as.data.frame(monthly_max[[12]])$V1))
+error_cases = c(9, 12)
+for (i in 1:length(monthly_max)) {
+  print(i)
+  trend = n[i,]
+  trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
+  fit_const = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             std.err = FALSE)
+  fit_dependant = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             nsloc = trend,
+                             std.err = FALSE)
+  
+  ratios[[i]] = fit_const$dev-fit_dependant$dev 
+}
+names(ratios) = names(monthly_max)
+chi_95level = qchisq(0.95,1)
+
+plot(unlist(ratios),main="95% confidence test for time independance", xlab="Month",ylab="Likelyhood Ratio Statistic")
+abline(a=chi_95level,b=0,col="red")
+
+```
+
+Another method is the chi plot. We need to do this for each month (not m1):
+TODO: do this by month
 ```{r}
 # plot the chi plot for dependance analysis
 dat.m1_month = cbind(m1,month_indexes);
@@ -253,9 +303,83 @@ chiplot(dat.m1_nino);
 We will now analyse temporal clustering of extremes. For this, we will use the exiplot function from the evd library.
 
 ```{r}
-# get sample quantiles (used as plotting thresholds)
-prod.quantiles = quantile(prod, c(0.8, 0.85, 0.9, 0.95,0.99,0.999))
-exiplot(prod,prod.quantiles,main = "Analyiss of Extremal clustering",xlab = "Threshold", ylab = "Extremal Index")
+# define a function for getting the extremal indices for each month for a given threshold
+monthly_eindex <- function(data, threshold_p, r=0){
+  ei = list()
+  for (i in 1:length(data)) {
+    threshold = quantile(as.data.frame(data[[i]])$V1, threshold_p)
+    ei[[i]]=exi(as.data.frame(data[[i]])$V1, threshold, r)
+  }
+  names(ei) = names(data)
+
+  return(ei)
+}
+
+ei = monthly_eindex(get_monthly(prod_ts), 0.95)
+plot(unlist(ei), main="Extremal Index by Month, 95%-Quantile as Threshold", xlab="Month", ylab="Extremal index")
 ```
 
-We observe that the extremal index is ~0.2, we can therefore conclude that we have strong dependance of extremes, with the limiting mean cluster size being roughly 5. The clustering has no effect for estimaters based on the (monthly) maximum, but the r largest estimator is influenced by it.
+We observe that the extremal index is ~0.25-~0.45, we can therefore conclude that we have strong dependance of extremes, with the limiting mean cluster size being roughly from 2 to 4. The clustering has no effect for estimaters based on the (monthly) maximum, but the r largest estimator is influenced by it.
+
+
+**PART 4**
+First, let's estimate the 10 year return level using point process approach
+```{r}
+monthly_fits_pp = list()
+monthly_data = get_monthly(prod_ts)
+error_cases = c(1,2,3,4,5,6,7,8,9,10,11,12)
+month_days = c(31,28,31,30,31,30,31,31,30,31,30,31)
+for (i in 1:length(monthly_max)) {
+  print(i)
+  threshold = quantile(as.data.frame(monthly_data[[i]])$V1, 0.99)
+  
+  if (i %in% error_cases) {
+    monthly_fits_pp[[i]] = fpot(as.data.frame(monthly_data[[i]])$V1,
+                             threshold = threshold,
+                             model="pp",
+                             npp = month_days[i]*8,
+                             cmax = TRUE,
+                             r = 1,
+                             std.err = FALSE)
+  }
+  else {
+    monthly_fits_pp[[i]] = fpot(as.data.frame(monthly_data[[i]])$V1,
+                             threshold = threshold,
+                             model="pp",
+                             npp = month_days[i]*8,
+                             cmax = TRUE,
+                             r = 1)
+  }
+}
+names(monthly_fits_pp) = names(monthly_data)
+for(i in 1:12){
+  par(mfrow=c(2,2)) 
+  plot(monthly_fits_pp[[i]])
+}
+
+```
+The fit in february has completely failed, and the others are not very good either
+
+We will still estimate the return levels: TODO
+```{r}
+return_level_100 = list()
+return_level_50 = list()
+for (i in 1:length(monthly_max)) {
+  
+}
+names(return_level_100) = names(monthly_data)
+names(return_level_50) = names(monthly_data)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
