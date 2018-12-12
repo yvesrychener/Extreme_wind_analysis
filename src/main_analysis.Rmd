@@ -360,20 +360,26 @@ for(i in 1:12){
 ```
 The fit in february has completely failed, and the others are not very good either
 
-We will still estimate the return levels: TODO
+We will still estimate the return levels:
 ```{r}
-return_level_100 = list()
-return_level_50 = list()
-for (i in 1:length(monthly_max)) {
-  
+return_level = function(x,period=20){
+  p = 1/period
+  loc = x$estimate[[1]]
+  scale = x$estimate[[2]]
+  shape = x$estimate[[3]]
+  level = loc + scale*(((-log(1-p))^-shape-1)/shape)
+  return(level)
 }
-names(return_level_100) = names(monthly_data)
-names(return_level_50) = names(monthly_data)
+return_level_20 = lapply(monthly_fits, return_level) # 20 for testing
+return_level_100 = lapply(monthly_fits, return_level, period=100)
+return_level_50 = lapply(monthly_fits, return_level, period=50)
+plot(unlist(return_level_100),main="100 Year Retrun level, estimated with point process", xlab="Month",ylab="Return Level")
+plot(unlist(return_level_50),main="100 Year Retrun level, estimated with point process", xlab="Month",ylab="Return Level")
 
 ```
 
 
-
+TODO: estimat with mcmc
 
 
 
