@@ -249,9 +249,9 @@ for (i in 1:length(monthly_max)) {
   ratios[[i]] = fit_const$dev-fit_dependant$dev 
 }
 names(ratios) = names(monthly_max)
-chi_95level = qchisq(0.95,1)
+chi_95level = qchisq(1-0.05/12,1)
 
-plot(unlist(ratios),main="95% confidence test for time independance", xlab="Month",ylab="Likelyhood Ratio Statistic")
+plot(unlist(ratios),main="95% confidence test for time independance, Bonferroni multiple Testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
 
 ```
@@ -280,9 +280,9 @@ for (i in 1:length(monthly_max)) {
   ratios[[i]] = fit_const$dev-fit_dependant$dev 
 }
 names(ratios) = names(monthly_max)
-chi_95level = qchisq(0.95,1)
+chi_95level = qchisq(1-0.05/12,1)
 
-plot(unlist(ratios),main="95% confidence test for time independance", xlab="Month",ylab="Likelyhood Ratio Statistic")
+plot(unlist(ratios),main="95% confidence test for independance from ENSO, Bonferroni multiple testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
 
 ```
