@@ -380,7 +380,15 @@ plot(unlist(return_level_50),main="100 Year Retrun level, estimated with point p
 
 
 TODO: estimat with mcmc
+Assuming that we have the posterior densities of the markov chains, call theis function to plot return level histograms
 
+```{r}
+return_level_mcmc = function(posterior,period=20){
+  u = mc.quant(posterior,p=1-1/period,lh="gev")
+  label_mcmc_rl = sprintf("%s Year return level",period)
+  hist(u,nclass=20,prob=T,xlab=label_mcmc_rl)
+}
+```
 
 
 
