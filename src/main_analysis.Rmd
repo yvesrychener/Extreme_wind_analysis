@@ -287,14 +287,22 @@ abline(a=chi_95level,b=0,col="red")
 
 ```
 
-Another method is the chi plot. We need to do this for each month (not m1):
-TODO: do this by month
+Another method is the chi plot:
 ```{r}
 # plot the chi plot for dependance analysis
-dat.m1_month = cbind(m1,month_indexes);
-dat.m1_nino = cbind(m1,nino34);
-chiplot(dat.m1_month);
-chiplot(dat.m1_nino);
+trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
+n = nino34
+dim(n)=c(12,length(as.data.frame(monthly_max[[12]])$V1))
+
+for (i in 1:length(monthly_max)) {
+  nino = n[i,]
+  m_data=as.data.frame(monthly_max[[i]])$V1
+  dat.m1_month = cbind(m_data,trend);
+  dat.m1_nino = cbind(m_data,nino);
+  par(mfrow=c(2,2))
+  chiplot(dat.m1_month,main1 = "Chi Plot Time",main2 = "Chi Bar Plot Time");
+  chiplot(dat.m1_nino,main1 = "Chi Plot ENSO",main2 = "Chi Bar Plot ENSO");
+}
 ```
 
 
