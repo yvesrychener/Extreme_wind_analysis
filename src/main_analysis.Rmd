@@ -187,6 +187,8 @@ plot_w_err(1:12, mle_shape, mle_shape_se, "Shape Parameter as Estimated with Lik
 ** Fit with Bayesian Methods for months separately**
 ```{r}
 
+
+# Fits GEV distribution with bayesian method for given parameters
 bayes_fitter = function(x, 
                         init = c(1e3, 1e3, 0.1), # Initial values
                         mat = diag(c(10000,10000,100)),
@@ -212,11 +214,66 @@ bayes_fitter = function(x,
        acceptance_rate = attr(mcmc(post),"ar"))
 }
 
-monthly_bayes_fit = lapply(monthly_max, bayes_fitter, do_diagn = TRUE, do_autoreg = FALSE,
-                           psd = c(500,0.3,0.3), nit=30000, thinning = 300)
+
+
+# Iteratively fits GEV with bayesian methods, until the fit has 
+# acceptable acceptance rates (i.e. 0.2 < AR < 0.4). If the AR is too high, 
+# the proposed SDev for the parameter is multiplied with 1.5. If it's too small,
+# the proposed SDev is divided by 2. This is repeated until the acceptance rate
+# is good for all parameters, or max_it is reached. Then, a final model is fitted
+# with more iterations. 
+bayes_fitter_param_search = function(x,
+                                     psd_init = c(500,0.1,0.1), # Initial proposed SDev
+                                     nit_full = 3000, # Nb Iterations for final model
+                                     nit_search = 150, # Nb Iterations for param search
+                                     do_diagn = FALSE, # Bool whether to show diagnostic plots
+                                     do_autoreg = FALSE, # Bool whether to show autoreg plots
+                                     max_it = 20,
+                                     ... # Additional params passed to bayes_fitter
+                                     ) 
+{
+  # Iterate until desired acceptance rate is obtained
+  cont = TRUE
+  psd = psd_init
+  it = 0
+  while(cont) {
+    it = it+1
+    if (it > max_it) {
+      warning("The ")
+    }
+    fit = bayes_fitter(x, psd=psd, nit=nit_search, do_diagn=FALSE, 
+                       do_autoreg=FALSE,...)
+    acc_rates = fit$acceptance_rate[1, 1:3]
+    
+    too_high = acc_rates > .4
+    too_low = acc_rates < .2
+    
+    if (all(!too_high) && all(!too_low)) { # All acceptance rates lie within threshold
+      cont=FALSE
+    } else if (it > max_it) { # max_it is reached
+      cont=FALSE
+      warning("max_it was reached")
+    } else { # Correct values which have wrong threshold
+      psd[too_high] = psd[too_high] * 1.5
+      psd[too_low] = psd[too_low] / 2
+    }
+  }
+  
+  # Fit final model
+  bayes_fitter(x, psd=psd, nit=nit_full, do_diagn=do_diagn, 
+               do_autoreg=do_autoreg, ...)
+  
+}
+                                     
+
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = TRUE, 
+                           do_autoreg = FALSE,
+                           psd = c(500,0.3,0.3), nit_full=30000, nit_search = 30000,
+                           thinning = 300)
 acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1,])
 print(acceptance_rates)
-
+bayes_params = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, mean))
+bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sdev))
 
 
 ```
@@ -335,11 +392,11 @@ First, let's estimate the 10 year return level using point process approach
 ```{r}
 monthly_fits_pp = list()
 monthly_data = get_monthly(prod_ts)
-error_cases = c(1,2,3,4,5,6,7,8,9,10,11,12)
+#error_cases = c(1,2,3,4,5,6,7,8,9,10,11,12)
 month_days = c(31,28,31,30,31,30,31,31,30,31,30,31)
 for (i in 1:length(monthly_max)) {
   print(i)
-  threshold = quantile(as.data.frame(monthly_data[[i]])$V1, 0.99)
+  threshold = quantile(as.data.frame(monthly_data[[i]])$V1, 0.95)
   
   if (i %in% error_cases) {
     monthly_fits_pp[[i]] = fpot(as.data.frame(monthly_data[[i]])$V1,
@@ -348,7 +405,8 @@ for (i in 1:length(monthly_max)) {
                              npp = month_days[i]*8,
                              cmax = TRUE,
                              r = 1,
-                             std.err = FALSE)
+                             std.err = FALSE,
+                             method = "Nelder-Mead")
   }
   else {
     monthly_fits_pp[[i]] = fpot(as.data.frame(monthly_data[[i]])$V1,
@@ -356,7 +414,8 @@ for (i in 1:length(monthly_max)) {
                              model="pp",
                              npp = month_days[i]*8,
                              cmax = TRUE,
-                             r = 1)
+                             r = 1,
+                             method = "Nelder-Mead")
   }
 }
 names(monthly_fits_pp) = names(monthly_data)
@@ -381,8 +440,8 @@ return_level = function(x,period=20){
 return_level_20 = lapply(monthly_fits, return_level) # 20 for testing
 return_level_100 = lapply(monthly_fits, return_level, period=100)
 return_level_50 = lapply(monthly_fits, return_level, period=50)
-plot(unlist(return_level_100),main="100 Year Retrun level, estimated with point process", xlab="Month",ylab="Return Level")
-plot(unlist(return_level_50),main="100 Year Retrun level, estimated with point process", xlab="Month",ylab="Return Level")
+plot(unlist(return_level_100),main="100 Year Return level, estimated with point process", xlab="Month",ylab="Return Level")
+plot(unlist(return_level_50),main="50 Year Return level, estimated with point process", xlab="Month",ylab="Return Level")
 
 ```
 
@@ -396,6 +455,8 @@ return_level_mcmc = function(posterior,period=20){
   label_mcmc_rl = sprintf("%s Year return level",period)
   hist(u,nclass=20,prob=T,xlab=label_mcmc_rl)
 }
+
+
 ```
 
 
