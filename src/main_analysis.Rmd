@@ -156,6 +156,14 @@ names(monthly_fits) = names(monthly_max)
 gumbel_qq(data.frame(monthly_max[[9]])[,1], "September")
 gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
 ```
+
+**Fit R largest order statistics**
+```{r}
+
+largest_10 = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasing=T)[1:4]))
+largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2]))
+```
+
 ```{r}
 get_se = function(x, ix) {
   if (is.null(x$std.err)) 0
@@ -168,6 +176,7 @@ mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
 mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
 mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
 ```
+
 
 ```{r}
 plot_w_err = function(x, y, se, title = NULL) {
@@ -266,14 +275,14 @@ bayes_fitter_param_search = function(x,
 }
                                      
 
-monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = TRUE, 
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = FALSE, 
                            do_autoreg = FALSE,
                            psd = c(500,0.3,0.3), nit_full=30000, nit_search = 30000,
                            thinning = 300)
-acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1,])
+acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1, ])
 print(acceptance_rates)
 bayes_params = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, mean))
-bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sdev))
+bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sd))
 
 
 ```
@@ -284,7 +293,7 @@ TODO-> R largest fit
 
 
 **PART 2**
-First, we check if the location parameter depends on time using a likelyhood ratio test
+First, we check if the location parameter depends on time using a likelihood ratio test
 ```{r}
 #monthly_fits = lapply(monthly_max, 
 #                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
@@ -308,7 +317,7 @@ for (i in 1:length(monthly_max)) {
 names(ratios) = names(monthly_max)
 chi_95level = qchisq(1-0.05/12,1)
 
-plot(unlist(ratios),main="95% confidence test for time independance, Bonferroni multiple Testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
+plot(unlist(ratios),main="95% confidence test for time independance, \nBonferroni multiple Testing", xlab="Month",ylab="Likelihood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
 
 ```
@@ -339,7 +348,7 @@ for (i in 1:length(monthly_max)) {
 names(ratios) = names(monthly_max)
 chi_95level = qchisq(1-0.05/12,1)
 
-plot(unlist(ratios),main="95% confidence test for independance from ENSO, Bonferroni multiple testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
+plot(unlist(ratios),main="95% confidence test for independance from ENSO, \nBonferroni multiple testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
 
 ```
@@ -392,7 +401,7 @@ First, let's estimate the 10 year return level using point process approach
 ```{r}
 monthly_fits_pp = list()
 monthly_data = get_monthly(prod_ts)
-#error_cases = c(1,2,3,4,5,6,7,8,9,10,11,12)
+error_cases = c(5, 9, )
 month_days = c(31,28,31,30,31,30,31,31,30,31,30,31)
 for (i in 1:length(monthly_max)) {
   print(i)
@@ -452,9 +461,11 @@ Assuming that we have the posterior densities of the markov chains, call theis f
 ```{r}
 return_level_mcmc = function(posterior,period=20){
   u = mc.quant(posterior,p=1-1/period,lh="gev")
-  label_mcmc_rl = sprintf("%s Year return level",period)
-  hist(u,nclass=20,prob=T,xlab=label_mcmc_rl)
+  label_mcmc_rl = sprintf("%s Year Return Level",period)
+  hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
 }
+
+lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior))
 
 
 ```
