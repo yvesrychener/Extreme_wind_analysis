@@ -401,7 +401,7 @@ First, let's estimate the 10 year return level using point process approach
 ```{r}
 monthly_fits_pp = list()
 monthly_data = get_monthly(prod_ts)
-error_cases = c(5, 9, )
+error_cases = c(5, 9)
 month_days = c(31,28,31,30,31,30,31,31,30,31,30,31)
 for (i in 1:length(monthly_max)) {
   print(i)
@@ -465,15 +465,89 @@ return_level_mcmc = function(posterior,period=20){
   hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
 }
 
-lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior))
+lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
+lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
 
 
 ```
 
 
 
+** Part 6**
+We now examine the assymptotic dependance between CAPE and SRH. This can be done by using chi-chibar plots. To eliminate the seasonality, we again consider the monthly data
+```{r}
+# plot the chi plot for dependance analysis
+data_overall_ts = xts(cbind(cape,srh), order.by = rep(dates, each=8))
+data_monthly_bivariate = get_monthly(data_overall_ts)
+
+for (i in 1:length(data_monthly_bivariate)) {
+  cape.local = as.numeric(data_monthly_bivariate[[i]]$cape)
+  srh.local = as.numeric(data_monthly_bivariate[[i]]$srh)
+  dat.cape_srh = cbind(cape.local,srh.local);
+  par(mfrow=c(1,2))
+  label_chi = sprintf("Chi plot Month %s",i)
+  label_chibar = sprintf("Chi Bar plot Month %s",i)
+  chiplot(dat.cape_srh, main1 = label_chi, which=1);
+  abline(a=0,b=0,col="red")
+  chiplot(dat.cape_srh, main2 = label_chibar, which=2);
+}
+```
+
+It seems that the confidence intervals for chi contain the 0 horizontal line, we can therefore not conclude that cape and srh are dependant.
 
 
 
+**Part 7**
+We will now fit different bivariate models to the monthly maxima and compare them using AIC. We will also estimate the dependance using the logistic link. (if the confidence interval for dep does not contain 1, then we can conclude that there is dependance).
 
+```{r}
+# prepare the data
+monthly_max.cape = get_monthly(apply.monthly(data_overall_ts$cape, max))
+monthly_max.srh = get_monthly(apply.monthly(data_overall_ts$srh, max))
 
+# fit the different models
+zeros = 0*(1:12)
+AIC_df = data.frame(zeros,zeros,zeros,zeros,zeros,zeros)
+dep.estimate = zeros
+dep.sd = zeros
+colnames(AIC_df) = c("log","alog","neglog","bilog","ct","negbilog")
+for (i in 1:12) {
+  print(i)
+  # fit the data
+  monthly_max_bivariate = cbind(as.numeric(monthly_max.cape[[i]]),as.numeric(monthly_max.srh[[i]]))
+  fit1 = fbvevd(monthly_max_bivariate,model = "log")
+  fit2 = fbvevd(monthly_max_bivariate,model = "alog",std.err = FALSE)
+  fit3 = fbvevd(monthly_max_bivariate,model="neglog") 
+  fit4 = fbvevd(monthly_max_bivariate,model="bilog", std.err = FALSE) 
+  fit5 = fbvevd(monthly_max_bivariate,model="ct", std.err = FALSE) 
+  fit6 = fbvevd(monthly_max_bivariate,model="negbilog", std.err = FALSE)
+  
+  # plot the fit for diagnostics
+  par(mfrow=c(3,2)) 
+  plot(fit1)
+  
+  # keep track of results
+  dep.estimate[i] = as.numeric(fit1$estimate["dep"])
+  dep.sd[i] = as.numeric(fit1$std.err["dep"])
+  aics = c(AIC(fit1), AIC(fit2), AIC(fit3), AIC(fit4), AIC(fit5), AIC(fit6))
+  AIC_df[i,] = aics
+
+}
+# show AICs for model selection
+print(AIC_df)
+
+# plot depencance values for depenance analysis.
+par(mfrow=c(1,1))
+plot_w_err(1:12, dep.estimate, dep.sd, "Monthly Dependance Parameter vs Independance (Red)")
+abline(a=1,b=0,col="red")
+
+```
+
+When plotting the fit diagnostics, the following look good:
+fit1, fit2, fit4, fit5, fit6
+
+The fit could not be plotted for fit3.
+
+We believe that there is no reason to assume that a different model should be used for different months, so we chose the logistic model. It is one of the best models in every month, and if it isn't, the difference is only very small.
+
+The plot of the dependance parameter shows that our analysis does coincides with what we saw for the chi-chibar plot, the two series seem to have independant extremes.
