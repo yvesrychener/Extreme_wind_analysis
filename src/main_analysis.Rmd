@@ -9,7 +9,7 @@ library(evdbayes);
 library(coda);
 library(ismev);
 library(xts);
-
+library(fastR);
 ```
 
 
@@ -510,17 +510,32 @@ zeros = 0*(1:12)
 AIC_df = data.frame(zeros,zeros,zeros,zeros,zeros,zeros)
 dep.estimate = zeros
 dep.sd = zeros
-colnames(AIC_df) = c("log","alog","neglog","bilog","ct","negbilog")
+
+bv_evd_models = c("log","alog","neglog","bilog","ct","negbilog")
+colnames(AIC_df) = bv_evd_models
+
+bv_fits = list()
 for (i in 1:12) {
   print(i)
   # fit the data
-  monthly_max_bivariate = cbind(as.numeric(monthly_max.cape[[i]]),as.numeric(monthly_max.srh[[i]]))
-  fit1 = fbvevd(monthly_max_bivariate,model = "log")
-  fit2 = fbvevd(monthly_max_bivariate,model = "alog",std.err = FALSE)
-  fit3 = fbvevd(monthly_max_bivariate,model="neglog") 
-  fit4 = fbvevd(monthly_max_bivariate,model="bilog", std.err = FALSE) 
-  fit5 = fbvevd(monthly_max_bivariate,model="ct", std.err = FALSE) 
-  fit6 = fbvevd(monthly_max_bivariate,model="negbilog", std.err = FALSE)
+  monthly_max_bivariate = cbind(as.numeric(monthly_max.cape[[i]]),
+                                as.numeric(monthly_max.srh[[i]]))
+  # fit1 = fbvevd(monthly_max_bivariate,model = "log")
+  # fit2 = fbvevd(monthly_max_bivariate,model = "alog",std.err = FALSE)
+  # fit3 = fbvevd(monthly_max_bivariate,model="neglog") 
+  # fit4 = fbvevd(monthly_max_bivariate,model="bilog", std.err = FALSE) 
+  # fit5 = fbvevd(monthly_max_bivariate,model="ct", std.err = FALSE) 
+  # fit6 = fbvevd(monthly_max_bivariate,model="negbilog", std.err = FALSE)
+  
+  fit1 = fbvevd(monthly_max_bivariate,model = "log", method = "Nelder-Mead")
+  fit2 = fbvevd(monthly_max_bivariate,model = "alog", method = "Nelder-Mead", std.err = FALSE)
+  fit3 = fbvevd(monthly_max_bivariate,model="neglog",  method = "Nelder-Mead") 
+  fit4 = fbvevd(monthly_max_bivariate,model="bilog",  method = "Nelder-Mead", std.err = FALSE) 
+  fit5 = fbvevd(monthly_max_bivariate,model="ct",  method = "Nelder-Mead", std.err = FALSE) 
+  fit6 = fbvevd(monthly_max_bivariate,model="negbilog", method = "Nelder-Mead", std.err = FALSE)
+
+  bv_fits[[i]] = list(fit1, fit2, fit3, fit4, fit5, fit6)
+  names(bv_fits[[i]]) = bv_evd_models
   
   # plot the fit for diagnostics
   par(mfrow=c(3,2)) 
@@ -533,6 +548,8 @@ for (i in 1:12) {
   AIC_df[i,] = aics
 
 }
+names(bv_fits) = month_names
+
 # show AICs for model selection
 print(AIC_df)
 
@@ -551,3 +568,51 @@ The fit could not be plotted for fit3.
 We believe that there is no reason to assume that a different model should be used for different months, so we chose the logistic model. It is one of the best models in every month, and if it isn't, the difference is only very small.
 
 The plot of the dependance parameter shows that our analysis does coincides with what we saw for the chi-chibar plot, the two series seem to have independant extremes.
+
+```{r}
+# Return levels for model with best AUC for every month
+bivar_100yr_retlvl = vector()
+bivar_50yr_retlvl = vector()
+
+for (i in 1:12) {
+  n_sims = 10000
+  mod_ix = which.min(AIC_df[i, ]) # Index of model with best AIC for given month
+  params = bv_fits[[i]][[mod_ix]]$param
+  
+  print(params)
+  # Pass appropriate parameters according to model
+  if (mod_ix %in% c("log","neglog")) {
+    sim_vals = rbvevd(n=n_sims,
+                      dep=estimate["dep"],
+                      mar1=estimate[c("loc1", "scale1", "shape1")],
+                      mar2=estimate[c("loc2", "scale2", "shape2")])
+
+  }
+  else if (mod_ix %in% c("bilog", "ct", "negbilog")) {
+    sim_vals = rbvevd(n=n_sims,
+                      alpha=estimate["alpha"],
+                      beta=estimate["beta"],
+                      mar1=estimate[c("loc1", "scale1", "shape1")],
+                      mar2=estimate[c("loc2", "scale2", "shape2")])
+
+  }
+  else if (mod_ix %in% c("alog")) {
+    sim_vals = rbvevd(n=n_sims,
+                      dep=estimate["dep"],
+                      alpha=estimate["alpha"],
+                      beta=estimate["beta"],
+                      mar1=estimate[c("loc1", "scale1", "shape1")],
+                      mar2=estimate[c("loc2", "scale2", "shape2")])
+  }
+
+  # Obtain simulated PROD value, get return levels
+  sim_prod = sqrt(sim_vals[ , 1]) * sim_vals[ , 2]
+  print(head(sim_prod))
+  bivar_100yr_retlvl[i]=nth(sim_prod, n_sims/100)
+  bivar_50yr_retlvl[i]=nth(sim_prod, n_sims/50)
+
+}
+```
+
+
+
