@@ -9,7 +9,6 @@ library(evdbayes);
 library(coda);
 library(ismev);
 library(xts);
-library(fastR);
 ```
 
 
@@ -459,14 +458,15 @@ TODO: estimat with mcmc
 Assuming that we have the posterior densities of the markov chains, call theis function to plot return level histograms
 
 ```{r}
-return_level_mcmc = function(posterior,period=20){
+return_level_mcmc = function(posterior,period=20, plot=F){
   u = mc.quant(posterior,p=1-1/period,lh="gev")
   label_mcmc_rl = sprintf("%s Year Return Level",period)
-  hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
+  if(plot) hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
+  return(mean(u))
 }
 
-lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
-lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
+bayes_50yr_retlvl = lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
+bayes_100yr_retlvl = lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
 
 
 ```
@@ -575,44 +575,73 @@ bivar_100yr_retlvl = vector()
 bivar_50yr_retlvl = vector()
 
 for (i in 1:12) {
-  n_sims = 10000
-  mod_ix = which.min(AIC_df[i, ]) # Index of model with best AIC for given month
-  params = bv_fits[[i]][[mod_ix]]$param
-  
-  print(params)
+  n_sims = 500000
+  mod_ix = c("neglog"=3) #Always use neglog
+  #mod_ix = which.min(AIC_df[i, ]) # Index of model with best AIC for given month
+  estimate = bv_fits[[i]][[mod_ix]]$estimate
+  model=names(mod_ix)
   # Pass appropriate parameters according to model
-  if (mod_ix %in% c("log","neglog")) {
+  if (model %in% c("log", "neglog")) {
     sim_vals = rbvevd(n=n_sims,
                       dep=estimate["dep"],
                       mar1=estimate[c("loc1", "scale1", "shape1")],
-                      mar2=estimate[c("loc2", "scale2", "shape2")])
+                      mar2=estimate[c("loc2", "scale2", "shape2")],
+                      model=model)
 
   }
-  else if (mod_ix %in% c("bilog", "ct", "negbilog")) {
+  else if (model %in% c("bilog", "ct", "negbilog")) {
     sim_vals = rbvevd(n=n_sims,
                       alpha=estimate["alpha"],
                       beta=estimate["beta"],
                       mar1=estimate[c("loc1", "scale1", "shape1")],
-                      mar2=estimate[c("loc2", "scale2", "shape2")])
+                      mar2=estimate[c("loc2", "scale2", "shape2")],
+                      model=model)
 
   }
-  else if (mod_ix %in% c("alog")) {
+  else if (model %in% c("alog")) {
     sim_vals = rbvevd(n=n_sims,
                       dep=estimate["dep"],
-                      alpha=estimate["alpha"],
-                      beta=estimate["beta"],
+                      asy=c(estimate["asy1"], estimate["asy2"]),
                       mar1=estimate[c("loc1", "scale1", "shape1")],
-                      mar2=estimate[c("loc2", "scale2", "shape2")])
+                      mar2=estimate[c("loc2", "scale2", "shape2")],
+                      model=model)
   }
 
   # Obtain simulated PROD value, get return levels
   sim_prod = sqrt(sim_vals[ , 1]) * sim_vals[ , 2]
-  print(head(sim_prod))
-  bivar_100yr_retlvl[i]=nth(sim_prod, n_sims/100)
-  bivar_50yr_retlvl[i]=nth(sim_prod, n_sims/50)
+  
+  # GET RETURN LEVELS WITH MEAN OF MAX, DOESN'T REALLY MAKE SENSE
+  # #bivar_100yr_retlvl[i] = mean(apply(matrix(sim_prod, ncol=100), 2, max, na.rm=T),
+  #                              na.rm=T)
+  # #bivar_50yr_retlvl[i] = mean(apply(matrix(sim_prod, ncol=50), 2, max, na.rm=T),
+  #                             na.rm=T)
+
+  # TAKE N-TH LARGEST ORDER STATISTIC, WITH N = N_SIMS/RET_INTERVAL
+  bivar_100yr_retlvl[i] = sort(sim_prod, #partial=n_sims/100,
+                               decreasing=T)[n_sims/100]
+  bivar_50yr_retlvl[i] = sort(sim_prod, #partial=n_sims/50,
+                              decreasing=T)[n_sims/50]
+
 
 }
 ```
 
+```{r}
+plot(1:12, return_level_100, col="blue", ylim=c(0, 200000),
+     main="100 Year Return Levels", pch=19)
+points(1:12, bivar_100yr_retlvl, col="red", pch=19)
+points(1:12, bayes_100yr_retlvl, col="green", pch=19)
+legend("topright", c("Bayesian", "Point Process", "Bivariate"), 
+       fill=c("green","blue","red"))
+
+plot(1:12, return_level_50, col="blue", ylim=c(0, 200000),
+     main="50 Year Return Levels", pch=19)
+points(1:12, bivar_50yr_retlvl, col="red", pch=19)
+points(1:12, bayes_50yr_retlvl, col="green", pch=19)
+legend("topright", c("Bayesian", "Point Process", "Bivariate"), 
+       fill=c("green","blue","red"))
+
+
+```
 
 
