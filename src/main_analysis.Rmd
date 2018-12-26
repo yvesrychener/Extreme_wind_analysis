@@ -622,19 +622,22 @@ for (i in 1:12) {
   bivar_50yr_retlvl[i] = sort(sim_prod, #partial=n_sims/50,
                               decreasing=T)[n_sims/50]
 
+  # USE QUANTILES
+  bivar_100yr_retlvl[i] = quantile(sim_prod, probs=1/100, na.rm = T)
+  bivar_50yr_retlvl[i] = quantile(sim_prod, probs = 1/50, na.rm = T)
 
 }
 ```
 
 ```{r}
-plot(1:12, return_level_100, col="blue", ylim=c(0, 200000),
+plot(1:12, return_level_100, col="blue", ylim=c(0, 100000),
      main="100 Year Return Levels", pch=19)
 points(1:12, bivar_100yr_retlvl, col="red", pch=19)
 points(1:12, bayes_100yr_retlvl, col="green", pch=19)
 legend("topright", c("Bayesian", "Point Process", "Bivariate"), 
        fill=c("green","blue","red"))
 
-plot(1:12, return_level_50, col="blue", ylim=c(0, 200000),
+plot(1:12, return_level_50, col="blue", ylim=c(0, 100000),
      main="50 Year Return Levels", pch=19)
 points(1:12, bivar_50yr_retlvl, col="red", pch=19)
 points(1:12, bayes_50yr_retlvl, col="green", pch=19)
