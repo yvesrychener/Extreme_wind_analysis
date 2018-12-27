@@ -617,14 +617,14 @@ for (i in 1:12) {
   #                             na.rm=T)
 
   # TAKE N-TH LARGEST ORDER STATISTIC, WITH N = N_SIMS/RET_INTERVAL
-  bivar_100yr_retlvl[i] = sort(sim_prod, #partial=n_sims/100,
-                               decreasing=T)[n_sims/100]
-  bivar_50yr_retlvl[i] = sort(sim_prod, #partial=n_sims/50,
-                              decreasing=T)[n_sims/50]
+  #bivar_100yr_retlvl[i] = sort(sim_prod, #partial=n_sims/100,
+                               #decreasing=T)[n_sims/100]
+  #bivar_50yr_retlvl[i] = sort(sim_prod, #partial=n_sims/50,
+                              #decreasing=T)[n_sims/50]
 
   # USE QUANTILES
-  bivar_100yr_retlvl[i] = quantile(sim_prod, probs=1/100, na.rm = T)
-  bivar_50yr_retlvl[i] = quantile(sim_prod, probs = 1/50, na.rm = T)
+  bivar_100yr_retlvl[i] = quantile(sim_prod, probs=1-1/100, na.rm = T)
+  bivar_50yr_retlvl[i] = quantile(sim_prod, probs =1- 1/50, na.rm = T)
 
 }
 ```
