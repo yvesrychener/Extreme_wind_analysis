@@ -1,0 +1,52 @@
+\documentclass[10pt,conference,compsocconf]{IEEEtran}
+
+\usepackage{hyperref}
+\usepackage{graphicx}	% For figure environment
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{url}
+\newcommand{\beginsupplement}{%
+	\setcounter{table}{0}
+	\renewcommand{\thetable}{S\arabic{table}}%
+	\setcounter{figure}{0}
+	\renewcommand{\thefigure}{S\arabic{figure}}%
+}
+
+\begin{document}
+\title{Extreme Wind Analysis}
+
+\author{
+	Matthias Minder, Yves Rychener
+}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section*{Introduction} 
+Modeling extreme weather events is of interest for a variety of applications, such as risk assessment for insurance companies or conception of preventive measures. In particular, questions about how often a particular event will occur, how severe events can get, and whether there are seasonal or year-dependent trends are of interest. Within the scope of this report, we will address these questions for extreme thunderstorms on a 1° longitude and 1° latitude grid cell with south-west coordinates 38° latitude and -100° longitude, situated in central Kansas. The measured quantities are the Connective Available Potential Energy ($CAPE$) and the Storm Relative Helicity ($SRH$), which have to be simultaneously high for severe thunderstorms to occur. Three-hourly time series of these events are taken into account from January 1st 1979 at 00:00 to December 31st 2014, 21:00. 
+\par
+In particular, we will study the value denoted $PROD$ given by $PROD = \sqrt{CAPE} \times SRH$. It captures concurrently high values of $SRH$ and $CAPE$, and is thus apt for modeling the risk of thunderstorms. Every month will be treated separately in order to capture seasonal differences. To model extreme values, a generalized extreme value distribution will be fitted to the monthly maxima of $PROD$ using maximum likelihood estimation as well as Bayesian approaches. Moreover, the generalized extreme value distribution will be fitted to the $r$-largest order statistic for every month to determine whether that improves the fit. Subsequently, we will assess dependence of $PROD$ upon time and the NINO 3.4 index, an established indicator of the El-Niño Southern Oscillation ($ENSO$). 
+\par
+Following this, $CAPE$ and $SRH$ are considered separately. We will study whether they are asymptotically dependent, before fitting bivariate models to the joint extremes of $CAPE$ and $SRH$. 
+Finally, 50- and 100-year return levels of $PROD$ are calculated based on fitting a point process model to $PROD$ with maximum likelihood estimation, based on the Bayesian fit, and based on simulated values of $CAPE$ and $SRH$ from the bivariate model fitted before. 
+\section*{Methods}
+
+
+\section*{Results}
+
+
+\section*{Conclusion}
+
+
+
+%%% Bibliography
+\bibliographystyle{IEEEtran}
+\bibliography{literature-project}
+
+
+	
+\end{document}
