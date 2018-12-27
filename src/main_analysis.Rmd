@@ -9,6 +9,7 @@ library(evdbayes);
 library(coda);
 library(ismev);
 library(xts);
+library(ggplot2);
 ```
 
 
@@ -27,7 +28,6 @@ prod = sqrt(cape)*srh
 
 
 
-
 ** Create Time Series Objects **
 ```{r}
 dates <- seq.Date(as.Date("1979-1-1"), as.Date("2015-12-31"), by=1)
@@ -38,8 +38,30 @@ prod_ts = xts(prod, order.by = rep(dates, each=8))
 ```
 
 
+**Plot of Time Series**
+```{r}
+ts_plot = autoplot(prod_ts) + xlab("Time") + ylab("PROD")
+ggsave("../plots/full_time_series.pdf", plot=ts_plot, width = 6, height = 3)
+ggsave("../plots/full_time_series.png", plot=ts_plot, width = 3, height = 1.5)
 
-**Beginning the Analysis**
+prod_full_monthly_max = apply.monthly(prod_ts, max)
+max_ts_plot = autoplot(prod_full_monthly_max) +
+  xlab("Time") + ylab("PROD") +
+  geom_line(size=.5)
+ggsave("../plots/monthly_max_series.pdf", plot=max_ts_plot, width = 6, height = 3)
+ggsave("../plots/monthly_max_series.png", plot=max_ts_plot, width = 3, height = 1.5)
+
+nino34_plot = ggplot() + geom_line(aes(index(prod_full_monthly_max), nino34)) +
+  xlab("Time") + ylab("NINO 3.4")
+ggsave("../plots/nino34_plot.pdf", plot=nino34_plot, width = 6, height = 3)
+ggsave("../plots/nino34_plot.png", plot=nino34_plot, width = 3, height = 1.5)
+
+
+```
+
+
+
+**Group Monthly**
 ```{r}
 month_names = c("jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec")
 get_monthly = function(x) {
@@ -61,6 +83,15 @@ get_monthly = function(x) {
 monthly_max = get_monthly(apply.monthly(prod_ts, max))
 r = 2
 r_monthly_max = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasing=T)[1:r]))
+```
+
+**Plot Monthly Time Series**
+```{r}
+for (i in 1:12) {
+  tmp = autoplot(monthly_max[[i]]) + xlab("Time") + ylab("PROD")
+  ggsave(paste("../plots/monthly_max_series/", sprintf("%02d", i), "monthly_max_series.pdf", sep=""), 
+         plot=tmp, width = 6, height = 3)
+}
 ```
 
 
@@ -135,8 +166,6 @@ apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
 monthly_fits = list()
 error_cases = c(9, 12)
 for (i in 1:length(monthly_max)) {
-  print(i)
-  
   if (i %in% error_cases) {
     monthly_fits[[i]] = fgev(as.data.frame(monthly_max[[i]])$V1, 
                              method = "Nelder-Mead",
@@ -148,8 +177,18 @@ for (i in 1:length(monthly_max)) {
   }
 }
 names(monthly_fits) = names(monthly_max)
-
 ```
+
+```{r}
+for (i in 1:12) {
+  pdf(paste("../plots/monthly_mle_diag/", sprintf("%02d", i), "_monthly_mle_diag.pdf", sep=""),
+      width=7, height=7)
+  par(mfrow=c(2,2))
+  plot(monthly_fits[[i]])
+  dev.off()
+}
+```
+
 
 ```{r}
 gumbel_qq(data.frame(monthly_max[[9]])[,1], "September")
