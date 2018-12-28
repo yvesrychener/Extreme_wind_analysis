@@ -70,12 +70,56 @@ The proposal standard deviations were fine-tuned to obtain acceptance rates betw
 
 
 \section*{Dependence of CAPE and SRH}
+Asymptotic dependance (or independance) of bivariate maxima can be estimated using $\chi$ and $\bar{\chi}$ plots. The chi plot can be used to estimate dependance. The value of interest is $\chi = \lim_{u \to 1} \chi(u)$. For independance, $\chi \to 0$, since as $u \to 1$, $P\{F_X(x)>u | F_Y(y)>u\} \to \chi$. $\chi$ can distinguish the strength of dependence, but not the rate at which $\chi(u) \to 0$ as $u \to 1$. For this we can use the $\bar{\chi}$ plot. Generally we can say that for asymptotic independance $\lim_{u \to 1} \bar{\chi}(u) \to 0$, and for asymptotic dependance $\lim_{u \to 1} \bar{\chi}(u) \to 1$. (Source Slides 239-242 of the lecture notes)
+\par
+Our chi plots for all months look very similar. They suggest asymptotic independance between $CAPE$ and $SRH$ since $\lim_{u \to 1} \chi(u) \to 0$ and $\lim_{u \to 1} \bar{\chi}(u) \to 0$. Figure \ref{fig:cape_srh_chi} shows to represantative examples of the chi plots, for May and November. 
 
+\begin{figure}
+	\centering
+	\textbf{May}\\
+	\includegraphics[width=0.35\textwidth]{../plots/May_chi.pdf}\\
+	\textbf{November}\\
+	\includegraphics[width=0.35\textwidth]{../plots/November_chi.pdf}
+	\caption{Representative examples for chi plots for $CAPE$ and $SRH$. Both suggesting asymptotic independance.}
+	\label{fig:cape_srh_chi}
+\end{figure}
 
 \section*{Bivariate Fitting of CAPE and SRH}
+When fitting the bivariate extreme value distribution, other than the parameters for the marginals, also the link function has to be estimated. We use a parametric link function, the different models araising from different link functions are compared using Akaike Information Criterion (AIC). We argue that there is no logical reson to use a different link function for different months, so we select the negative logistic model for estimating the return level later, it is always one of the best and if it has only small deviance from the best model if it isn't the best one. The models we compared are logistic (log), assymetric logistic (alog), negative logistic (neglog), bilogistic (bilog), Coles-Tawn (ct) and negative bilogistic (negbilog). The AIC comparison can be see in Table \ref{table:cape_srh_AIC}.
+\begin{table}[]
+\begin{tabular}{lllllll}
+Month     & log       & alog      & neglog    & bilog     & ct        & negbilog  \\
+January   & 920.4382  & 921.3970  & 920.1642  & 920.3145  & 921.0079  & 920.2859  \\
+February  & 993.3549  & 997.1011  & 993.5037  & 995.2953  & 996.2297  & 994.7713  \\
+March     & 1070.1139 & 1074.1772 & 1069.5276 & 1072.2210 & 1074.1263 & 1071.6125 \\
+April     & 1064.8431 & 1068.7144 & 1064.6150 & 1066.1080 & 1066.2456 & 1066.3411 \\
+May       & 1066.4916 & 1070.3846 & 1066.4539 & 1068.2524 & 1070.9600 & 1068.1580 \\
+June      & 1043.2724 & 1047.0365 & 1043.4270 & 1040.6507 & 1043.1069 & 1045.4948 \\
+July      & 1046.9983 & 1044.9287 & 1046.6727 & 1046.2317 & 1048.3972 & 1046.4537 \\
+August    & 1029.1591 & 1032.9770 & 1029.4004 & 1031.1374 & 1031.2920 & 1031.1837 \\
+September & 1056.0452 & 1059.5972 & 1055.6588 & 1058.0904 & 1059.8551 & 1057.3405 \\
+October   & 1037.9838 & 1042.0191 & 1037.6208 & 1037.5553 & 1039.2542 & 1038.4781 \\
+November  & 1012.4036 & 1016.4255 & 1012.3667 & 1014.5137 & 1015.1308 & 1014.0998 \\
+December  & 892.7140  & 896.7475  & 892.5378  & 894.8876  & 895.4521  & 894.2789 
+\end{tabular}
+\caption{AIC comparison of different link function models}
+\label{table:cape_srh_AIC}
+\end{table}
 
+For the fit, we extracted for each month the maximal $SRH$ value and the maximal $CAPE$ value and fitted the distribution to this data pair. We have therefore to be careful when drawing conclusions, since the "observations" we fit the models to often don't actually exist!
+
+Before, we estimated the dependance between CAPE and SRH. We can also verify these results with the fits we just made. For this we will use the dependance parameter $\alpha$ from the logistic model. For this model, we know that for independance $\alpha \to 1$ and for complete dependance $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependance parameters with 95\% confidence bands. This suggests that independance between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/dependance_parameter_cape_srh_logistic.pdf}
+	\caption{Monthly dependance parameter $\alpha$ with 95\% confidence bands.}
+	\label{fig:cape_srh_dependance_logistic}
+\end{figure}
 
 \section*{Calculation of Return Levels}
+
+\section*{Impact by Using Variable Transfromations}
 
 \section*{Conclusion}
 
