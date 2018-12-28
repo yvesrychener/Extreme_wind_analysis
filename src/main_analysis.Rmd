@@ -313,13 +313,13 @@ bayes_fitter_param_search = function(x,
 }
                                      
 
-monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = FALSE, 
-                           do_autoreg = FALSE,
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = TRUE, 
+                           do_autoreg = TRUE,
                            psd = c(500,0.3,0.3), nit_full=30000, nit_search = 30000,
                            thinning = 300)
 acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1, ])
 print(acceptance_rates)
-bayes_params = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, mean))
+bayes_params = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, median))
 bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sd))
 
 
@@ -501,11 +501,13 @@ return_level_mcmc = function(posterior,period=20, plot=F){
   u = mc.quant(posterior,p=1-1/period,lh="gev")
   label_mcmc_rl = sprintf("%s Year Return Level",period)
   if(plot) hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
-  return(mean(u))
 }
 
-bayes_50yr_retlvl = lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
-bayes_100yr_retlvl = lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
+lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
+lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
+
+bayes_50yr_retlvl = return_level(bayes_params)
+bayes_100yr_retlvl = return_level(bayes_params)
 
 
 ```

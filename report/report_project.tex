@@ -56,7 +56,15 @@ In order to understand the behavior of the monthly maxima, we fitted a generaliz
 	\label{fig:mle_diag}
 \end{figure}
 \par
-First, we fitted the values using maximum likelihood estimation. Fitting was done using the evd package in R, using the Nelder-Mead optimization method and standard parameters \cite{evd}. The quality of the fit was assessed using diagnostic plots, as shown for January and December in Figure \ref{fig:mle_diag}. The model performed well with the exception of September and December: In September optimization didn't succeed, whereas in December the observed values lie outside of the given confidence intervals, as shown in Figure \ref{fig:mle_diag}. For both of these months, no standard error could be calculated due to singularity of the observed Fisher information matrix. Since we expect some continuity over the course of the year, the problem wasn't further investigated as inferences for the missing months can be made from their adjacent months.   
+First, we fitted the values using maximum likelihood estimation. Fitting was done using the evd package in R, using the Nelder-Mead optimization method and standard parameters \cite{evd}. The quality of the fit was assessed using diagnostic plots, as shown for January and December in Figure \ref{fig:mle_diag}. The model performed well with the exception of September and December: In September optimization didn't succeed, whereas in December the observed values lie outside of the given confidence intervals, as shown in Figure \ref{fig:mle_diag}. For both of these months, no standard error could be calculated due to singularity of the observed Fisher information matrix. Since we expect some continuity over the course of the year, the problem wasn't further investigated as inferences for the missing months can be made from their adjacent months. 
+\par
+
+\par
+Then, we fitted the values using the Metropolis-Hastings algorithm. As a prior for the three parameters, a normal distribution with mean zero and a diagonal covariance matrix $\Sigma$ was used. 
+WIE GENAU FUNKTIONIERT DS? I TSCHEGGES LEIDR NID SO GANZ...
+The proposal standard deviations were fine-tuned to obtain acceptance rates between 0.2 and 0.4. In order to avoid having to fine-tune every month separately, we implemented the following very simple optimization algorithm: If the acceptance rates for a given parameter were too high, the proposal standard deviation for said parameter were multiplied with 1.5. In the opposite case for low acceptance rates, the proposal standard deviation was divided by 2. The Metropolis-Hastings algorithm was run with 30'000 iterations. The chain was thinned with a factor 300 in order to avoid dependence between steps of the markov chain. The thinning was validated with autocorrelation plots (not shown). The final parameter was determined to be the median of the posterior distribution, in order to be robust to outliers and be more adapted to skewed distributions. 
+\par
+
 
 \section*{Dependence of PROD on Time and ENSO}
 
