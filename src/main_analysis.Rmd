@@ -196,9 +196,24 @@ gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
 ```
 
 **Fit R largest order statistics**
-```{r}
 
-largest_10 = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasing=T)[1:4]))
+find a good r for january
+```{r}
+zeros = 0*(1:10)
+se_df_jan = data.frame(1:10,zeros,zeros,zeros,zeros)
+colnames(se_df_jan) = c("r","SE-mu","SE-sig","SE-sh","2l")
+largest_10 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:10]]))
+for (i in 1:10){
+  fit = rlarg.fit(largest_10$jan,r=i)
+  se_df_jan[i,2:4]=fit$se
+  se_df_jan[i,5]=fit$nllh
+}
+print(se_df_jan)
+```
+
+
+```{r}
+largest_10 = get_monthly(alarpply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:4]]))
 largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2]))
 
 ```
