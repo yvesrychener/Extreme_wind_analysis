@@ -61,25 +61,25 @@ First, we fitted the values using maximum likelihood estimation. Fitting was don
 \par
 
 \par
-Then, we fitted the values using the Metropolis-Hastings algorithm. As a prior for the three parameters, a normal distribution with mean zero and a diagonal covariance matrix $\Sigma$ was used.
-Here, we will give an intuitive explanation of the Metropolis-Hastings algorithm, for a more detailed and mathematically rigurous explanation, please refer to the MCMC slides on the course Moodle.
-This algorithm creates a markov chain with stationnary distribution $\pi(x)$, where $\pi(x)$ is also the desired distribution of the parameters of our model. The transition probability from $x$ to $y$ is $p(x,y)=\alpha(x,y) q(x,y)$, where $\alpha(x,y)$ is the acceptance rate, and $q(x,y)$ is the proposition density. We can select the proposition density $q(x,y)$ ourselfs, usually a normal distribution is chosen, the acceptance rate can be shown to be $\alpha(x,y)=min(\frac{\pi(y) q(y,x)}{\pi(x) q(x,y)},1)$.
+Then, we fitted the values using the Metropolis-Hastings algorithm. As a prior for the three parameters, a normal distribution with mean zero and a diagonal covariance matrix was used.
+Here, we will give an intuitive explanation of the Metropolis-Hastings algorithm; for a more detailed and mathematically rigorous explanation, please refer to slides 82-86 of the course slides.
+This algorithm creates a Markov chain with stationary distribution $\pi(x)$, where $\pi(x)$ is also the desired distribution of the parameters of our model. The transition probability from $x$ to $y$ is $p(x,y)=\alpha(x,y) q(x,y)$, where $\alpha(x,y)$ is the acceptance rate, and $q(x,y)$ is the proposition density. We can select the proposition density $q(x,y)$ ourselves, usually a normal distribution is chosen, the acceptance rate can be shown to be $\alpha(x,y)=min(\frac{\pi(y) q(y,x)}{\pi(x) q(x,y)},1)$.
 We can imagine the sampling as follows:
-An agent is navigating the markov chain. At every iteration, it will sample a proposed step to take from the distribution $q(x,y)$. Then, with probability $\alpha(x,y)$, it is allowed to take said step and move to a new state. With probability $1-\alpha(x,y)$, the step is rejected and we stay at the current state. We can estimate the (unknown) stationnary distribution of the chain by navigating $n$ iterations and keeping track of the empirical state distribution. As $n \to \infty$ (or in practice for big $n$), we converge to the true stationnary distribution. The proposal standard deviation dictates how big the proposal steps are. If the agent wants to take steps that are too big, he gets rejected all the time and cannot explore the chain. If the proposal steps are too small, he cannot fully explore the chain since $n$ has to be finite in order to finish our calculation. 
-In practice, we have to remove some "burn in", since we may start very far away from the stationnary distribution. Also, thinning is applied, since each state is dependant on the preceeding state, resulting in high autocorrelation.
+An agent is navigating the Markov chain. At every iteration, it will sample a proposed step to take from the distribution $q(x,y)$. Then, with probability $\alpha(x,y)$, it is allowed to take said step and move to a new state. With probability $1-\alpha(x,y)$, the step is rejected and we stay at the current state. We can estimate the (unknown) stationary distribution of the chain by navigating $n$ iterations and keeping track of the empirical state distribution. As $n \to \infty$ (or in practice for big $n$), we converge to the true stationary distribution. The proposal standard deviation dictates how big the proposal steps are. If the agent wants to take steps that are too big, he gets rejected all the time and cannot explore the chain. If the proposal steps are too small, he cannot fully explore the chain since $n$ has to be finite in order to finish our calculation. 
+In practice, we have to remove some "burn in", since we may start very far away from the stationary distribution. Also, thinning is applied, since each state is dependent on the preceding state, resulting in high autocorrelation.
 The proposal standard deviations were fine-tuned to obtain acceptance rates between 0.2 and 0.4. In order to avoid having to fine-tune every month separately, we implemented the following very simple optimization algorithm: If the acceptance rates for a given parameter were too high, the proposal standard deviation for said parameter were multiplied with 1.5. In the opposite case for low acceptance rates, the proposal standard deviation was divided by 2. The Metropolis-Hastings algorithm was run with 30'000 iterations. The chain was thinned with a factor 300 in order to avoid dependence between steps of the markov chain. The thinning was validated with autocorrelation plots (not shown). The final parameter was determined to be the median of the posterior distribution, in order to be robust to outliers and be more adapted to skewed distributions. 
 \par
 
 
 \section*{Dependence of PROD on Time and ENSO}
-A dependance test of $PROD$ can be done by likelyhood ratio test. For this, we test the model with constant parameters against the model with linear dependance for the location parameter, i.e. $\eta = \eta_0 + \eta_1*trend$. When taking a linear trend, we center and renormalise the trend  as recommended in the \textit{fgev} help files. The likelyhood ratio test is performed with the $\chi^2-Statistic$. We employ the bonferroni multiple testing method to take into account the multiple tests at 95\% significance level. Figure \ref{fig:dependance_test} displays the different ratios and the significance level (red) for the 95\% test. We see that the test is rejected in October for $ENSO$ dependance, and in december for time dependance. Independance can however not be ruled out for the other months. We also test a step function trend, simulating a regime change. The step function trend is calulated as $trend_{step} = step(renormalised(trend))$. With a step trend, the independance assumption can only be rejected for december time dependance (Figure \ref{fig:dependance_test_step}).
+A dependence test of $PROD$ can be done by likelihood ratio test. For this, we test the model with constant parameters against the model with linear dependence for the location parameter, i.e. $\eta = \eta_0 + \eta_1*trend$. When taking a linear trend, we center and renormalise the trend  as recommended in the \textit{fgev} help files. The likelihood ratio test is performed with the $\chi^2-Statistic$. We employ the Bonferroni multiple testing method to take into account the multiple tests at 95\% significance level. Figure \ref{fig:dependance_test} displays the different ratios and the significance level (red) for the 95\% test. We see that the test is rejected in October for $ENSO$ dependence, and in December for time dependence. Independence can however not be ruled out for the other months. We also test a step function trend, simulating a regime change. The step function trend is calculated as $trend_{step} = step(renormalised(trend))$. With a step trend, the independence assumption can only be rejected for December time dependence (Figure \ref{fig:dependance_test_step}).
 DA SÖTT NO E CONCLUSION HERE...
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.35\textwidth]{../plots/enso_dependance.pdf}\\
 	\includegraphics[width=0.35\textwidth]{../plots/time_dependance.pdf}
-	\caption{Plots for likelyhood ratios and 95\% significance levels for linear dependance}
+	\caption{Plots for likelihood ratios and 95\% significance levels for linear dependence}
 	\label{fig:dependance_test}
 \end{figure}
 
@@ -87,14 +87,14 @@ DA SÖTT NO E CONCLUSION HERE...
 	\centering
 	\includegraphics[width=0.35\textwidth]{../plots/enso_dependance_step.pdf}\\
 	\includegraphics[width=0.35\textwidth]{../plots/time_dependance_step.pdf}
-	\caption{Plots for likelyhood ratios and 95\% significance levels for linear dependance}
+	\caption{Plots for likelihood ratios and 95\% significance levels for linear dependence}
 	\label{fig:dependance_test_step}
 \end{figure}
 
 \section*{Dependence of CAPE and SRH}
-Asymptotic dependance (or independance) of bivariate maxima can be estimated using $\chi$ and $\bar{\chi}$ plots. The chi plot can be used to estimate dependance. The value of interest is $\chi = \lim_{u \to 1} \chi(u)$. For independance, $\chi \to 0$, since as $u \to 1$, $P\{F_X(x)>u | F_Y(y)>u\} \to \chi$. $\chi$ can distinguish the strength of dependence, but not the rate at which $\chi(u) \to 0$ as $u \to 1$. For this we can use the $\bar{\chi}$ plot. Generally we can say that for asymptotic independance $\lim_{u \to 1} \bar{\chi}(u) \to 0$, and for asymptotic dependance $\lim_{u \to 1} \bar{\chi}(u) \to 1$. (Source Slides 239-242 of the lecture notes)
+Asymptotic dependence (or independence) of bivariate maxima can be estimated using $\chi$ and $\bar{\chi}$ plots. The chi plot can be used to estimate dependence. The value of interest is $\chi = \lim_{u \to 1} \chi(u)$. For independence, $\chi \to 0$, since as $u \to 1$, $P\{F_X(x)>u | F_Y(y)>u\} \to \chi$. $\chi$ can distinguish the strength of dependence, but not the rate at which $\chi(u) \to 0$ as $u \to 1$. For this we can use the $\bar{\chi}$ plot. Generally we can say that for asymptotic independence $\lim_{u \to 1} \bar{\chi}(u) \to 0$, and for asymptotic dependence $\lim_{u \to 1} \bar{\chi}(u) \to 1$. (Source Slides 239-242 of the lecture notes)
 \par
-Our chi plots for all months look very similar. They suggest asymptotic independance between $CAPE$ and $SRH$ since $\lim_{u \to 1} \chi(u) \to 0$ and $\lim_{u \to 1} \bar{\chi}(u) \to 0$. Figure \ref{fig:cape_srh_chi} shows to represantative examples of the chi plots, for May and November. 
+Our chi plots for all months look very similar. They suggest asymptotic independence between $CAPE$ and $SRH$ since $\lim_{u \to 1} \chi(u) \to 0$ and $\lim_{u \to 1} \bar{\chi}(u) \to 0$. Figure \ref{fig:cape_srh_chi} shows to represantative examples of the chi plots, for May and November. 
 
 \begin{figure}
 	\centering
@@ -102,7 +102,7 @@ Our chi plots for all months look very similar. They suggest asymptotic independ
 	\includegraphics[width=0.35\textwidth]{../plots/May_chi.pdf}\\
 	\textbf{November}\\
 	\includegraphics[width=0.35\textwidth]{../plots/November_chi.pdf}
-	\caption{Representative examples for chi plots for $CAPE$ and $SRH$. Both suggesting asymptotic independance.}
+	\caption{Representative examples for chi plots for $CAPE$ and $SRH$. Both suggesting asymptotic independence.}
 	\label{fig:cape_srh_chi}
 \end{figure}
 
@@ -130,19 +130,19 @@ December  & 892.7  & 896.7  & 892.5  & 894.9  & 895.5  & 894.3
 
 For the fit, we extracted for each month the maximal $SRH$ value and the maximal $CAPE$ value and fitted the distribution to this data pair. We have therefore to be careful when drawing conclusions, since the "observations" we fit the models to often don't actually exist!
 
-Before, we estimated the dependance between CAPE and SRH. We can also verify these results with the fits we just made. For this we will use the dependance parameter $\alpha$ from the logistic model. For this model, we know that for independance $\alpha \to 1$ and for complete dependance $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependance parameters with 95\% confidence bands. This suggests that independance between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
+Before, we estimated the dependence between CAPE and SRH. We can also verify these results with the fits we just made. For this we will use the dependence parameter $\alpha$ from the logistic model. For this model, we know that for independence $\alpha \to 1$ and for complete dependence $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependence parameters with 95\% confidence bands. This suggests that independence between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.35\textwidth]{../plots/dependance_parameter_cape_srh_logistic.pdf}
-	\caption{Monthly dependance parameter $\alpha$ with 95\% confidence bands.}
+	\caption{Monthly dependence parameter $\alpha$ with 95\% confidence bands.}
 	\label{fig:cape_srh_dependance_logistic}
 \end{figure}
 
 \section*{Calculation of Return Levels}
 
 \section*{Impact by Using Variable Transfromations}
-We argue (without testting this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependance analysis would yield different results, since if the shape parameter has linear dependance in log space, it has exponential dependance in linear space. To do the same analysis, we would have to use a transformed trend $trend_{new}= log(trend)$. 
+We argue (without testting this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results, since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $trend_{new}= log(trend)$. 
 
 \section*{Conclusion}
 
