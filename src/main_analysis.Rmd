@@ -331,6 +331,8 @@ TODO-> R largest fit
 
 
 **PART 2**
+We perform 2 tests, first for linear depenance, then for step dependance (trend = int(rescaled(trend)>0))
+
 First, we check if the location parameter depends on time using a likelihood ratio test
 ```{r}
 #monthly_fits = lapply(monthly_max, 
@@ -372,6 +374,7 @@ error_cases = c(9, 12)
 for (i in 1:length(monthly_max)) {
   print(i)
   trend = n[i,]
+  
   trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
   fit_const = fgev(as.data.frame(monthly_max[[i]])$V1, 
                              method = "Nelder-Mead",
@@ -391,22 +394,67 @@ abline(a=chi_95level,b=0,col="red")
 
 ```
 
-Another method is the chi plot:
+Now the same for step dependance
 ```{r}
-# plot the chi plot for dependance analysis
-trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
+#monthly_fits = lapply(monthly_max, 
+#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+ratios = list()
+# split nino data into months
 n = nino34
 dim(n)=c(12,length(as.data.frame(monthly_max[[12]])$V1))
-
+error_cases = c(9, 12)
 for (i in 1:length(monthly_max)) {
-  nino = n[i,]
-  m_data=as.data.frame(monthly_max[[i]])$V1
-  dat.m1_month = cbind(m_data,trend);
-  dat.m1_nino = cbind(m_data,nino);
-  par(mfrow=c(2,2))
-  chiplot(dat.m1_month,main1 = "Chi Plot Time",main2 = "Chi Bar Plot Time");
-  chiplot(dat.m1_nino,main1 = "Chi Plot ENSO",main2 = "Chi Bar Plot ENSO");
+  print(i)
+  trend = n[i,]
+  trend = as.integer(trend>0)
+  
+  trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
+  fit_const = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             std.err = FALSE)
+  fit_dependant = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             nsloc = trend,
+                             std.err = FALSE)
+  
+  ratios[[i]] = fit_const$dev-fit_dependant$dev 
 }
+names(ratios) = names(monthly_max)
+chi_95level = qchisq(1-0.05/12,1)
+
+plot(unlist(ratios),main="95% confidence test for independance from ENSO, \nBonferroni multiple testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
+abline(a=chi_95level,b=0,col="red")
+
+```
+
+
+```{r}
+#monthly_fits = lapply(monthly_max, 
+#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+ratios = list()
+trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
+trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
+trend = as.integer(trend>0)
+error_cases = c(9, 12)
+for (i in 1:length(monthly_max)) {
+  print(i)
+  
+  fit_const = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             std.err = FALSE)
+  fit_dependant = fgev(as.data.frame(monthly_max[[i]])$V1, 
+                             method = "Nelder-Mead",
+                             nsloc = trend,
+                             std.err = FALSE)
+  
+  ratios[[i]] = fit_const$dev-fit_dependant$dev 
+}
+names(ratios) = names(monthly_max)
+chi_95level = qchisq(1-0.05/12,1)
+
+plot(unlist(ratios),main="95% confidence test for time independance, \nBonferroni multiple Testing", xlab="Month",ylab="Likelihood Ratio Statistic")
+abline(a=chi_95level,b=0,col="red")
+
 ```
 
 
@@ -506,8 +554,8 @@ return_level_mcmc = function(posterior,period=20, plot=F){
 lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
 lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
 
-bayes_50yr_retlvl = return_level(bayes_params)
-bayes_100yr_retlvl = return_level(bayes_params)
+bayes_50yr_retlvl = return_level_mcmc(bayes_params)
+bayes_100yr_retlvl = return_level_mcmc(bayes_params)
 
 
 ```
