@@ -200,6 +200,7 @@ gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
 
 largest_10 = get_monthly(apply.monthly(prod_ts, function(x) order(x, decreasing=T)[1:4]))
 largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2]))
+
 ```
 
 ```{r}
@@ -218,12 +219,16 @@ mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
 
 ```{r}
 plot_w_err = function(x, y, se, se.conf_mult = 1,title = NULL) {
-  max_ix = which.max(y)
-  min_ix = which.min(y)
+  upper_error = y+se.conf_mult*se
+  lower_error = y-se.conf_mult*se
+  
+  max_y = max(upper_error)
+  min_y = min(lower_error)
+  
   plot(x, y,
-       ylim = c(y[min_ix] - se.conf_mult*se[min_ix], y[max_ix] + se.conf_mult*se[max_ix]),
+       ylim = c(min_y, max_y),
        main = title)
-  arrows(x,y-se.conf_mult*se,x,y+se.conf_mult*se, code=3, length=0.02, angle = 90)
+  arrows(x,upper_error,x,lower_error, code=3, length=0.02, angle = 90)
 }
 plot_w_err(1:12, mle_loc, mle_loc_se, 1, "Location Parameter as Estimated with Likelihood")
 plot_w_err(1:12, mle_scale, mle_scale_se, 1, "Scale Parameter as Estimated with Likelihood")
@@ -636,11 +641,11 @@ for (i in 1:12) {
   
   # plot the fit for diagnostics
   par(mfrow=c(3,2)) 
-  plot(fit1)
+  #plot(fit1)
   
   # keep track of results
-  dep.estimate[i] = as.numeric(fit1$estimate["dep"])
-  dep.sd[i] = as.numeric(fit1$std.err["dep"])
+  dep.estimate[i] = as.numeric(fit3$estimate["dep"])
+  dep.sd[i] = as.numeric(fit3$std.err["dep"])
   aics = c(AIC(fit1), AIC(fit2), AIC(fit3), AIC(fit4), AIC(fit5), AIC(fit6))
   AIC_df[i,] = aics
 
@@ -650,12 +655,17 @@ names(bv_fits) = month_names
 # show AICs for model selection
 print(AIC_df)
 
+```
+
+```{r}
 # plot depencance values for depenance analysis.
 par(mfrow=c(1,1))
 plot_w_err(1:12, dep.estimate, dep.sd, 1.96,"Monthly Dependance Parameter vs Independance (Red)")
-abline(a=1,b=0,col="red")
+abline(a=0,b=0,col="red")
 
 ```
+
+
 
 When plotting the fit diagnostics, the following look good:
 fit1, fit2, fit4, fit5, fit6
