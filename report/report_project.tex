@@ -71,7 +71,24 @@ The proposal standard deviations were fine-tuned to obtain acceptance rates betw
 
 
 \section*{Dependence of PROD on Time and ENSO}
+A dependance test of $PROD$ can be done by likelyhood ratio test. For this, we test the model with constant parameters against the model with linear dependance for the location parameter, i.e. $\eta = \eta_0 + \eta_1*trend$. When taking a linear trend, we center and renormalise the trend  as recommended in the \textit{fgev} help files. The likelyhood ratio test is performed with the $\chi^2-Statistic$. We employ the bonferroni multiple testing method to take into account the multiple tests at 95\% significance level. Figure \ref{fig:dependance_test} displays the different ratios and the significance level (red) for the 95\% test. We see that the test is rejected in October for $ENSO$ dependance, and in december for time dependance. Independance can however not be ruled out for the other months. We also test a step function trend, simulating a regime change. The step function trend is calulated as $trend_{step} = step(renormalised(trend))$. With a step trend, the independance assumption can only be rejected for december time dependance (Figure \ref{fig:dependance_test_step}).
+DA SÖTT NO E CONCLUSION HERE...
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/enso_dependance.pdf}\\
+	\includegraphics[width=0.35\textwidth]{../plots/time_dependance.pdf}
+	\caption{Plots for likelyhood ratios and 95\% significance levels for linear dependance}
+	\label{fig:dependance_test}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/enso_dependance_step.pdf}\\
+	\includegraphics[width=0.35\textwidth]{../plots/time_dependance_step.pdf}
+	\caption{Plots for likelyhood ratios and 95\% significance levels for linear dependance}
+	\label{fig:dependance_test_step}
+\end{figure}
 
 \section*{Dependence of CAPE and SRH}
 Asymptotic dependance (or independance) of bivariate maxima can be estimated using $\chi$ and $\bar{\chi}$ plots. The chi plot can be used to estimate dependance. The value of interest is $\chi = \lim_{u \to 1} \chi(u)$. For independance, $\chi \to 0$, since as $u \to 1$, $P\{F_X(x)>u | F_Y(y)>u\} \to \chi$. $\chi$ can distinguish the strength of dependence, but not the rate at which $\chi(u) \to 0$ as $u \to 1$. For this we can use the $\bar{\chi}$ plot. Generally we can say that for asymptotic independance $\lim_{u \to 1} \bar{\chi}(u) \to 0$, and for asymptotic dependance $\lim_{u \to 1} \bar{\chi}(u) \to 1$. (Source Slides 239-242 of the lecture notes)
