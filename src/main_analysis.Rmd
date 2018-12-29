@@ -525,10 +525,18 @@ The fit in february has completely failed, and the others are not very good eith
 We will still estimate the return levels:
 ```{r}
 return_level = function(x,period=20){
+  if (is.list(x)) {
+    loc = x$estimate[[1]]
+    scale = x$estimate[[2]]
+    shape = x$estimate[[3]]
+  }
+  if (is.vector(x)) {
+    loc = x[1]
+    scale = x[2]
+    shape = x[3]
+  }
   p = 1/period
-  loc = x$estimate[[1]]
-  scale = x$estimate[[2]]
-  shape = x$estimate[[3]]
+  
   level = loc + scale*(((-log(1-p))^-shape-1)/shape)
   return(level)
 }
@@ -554,8 +562,8 @@ return_level_mcmc = function(posterior,period=20, plot=F){
 lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=50))
 lapply(monthly_bayes_fit, function(x) return_level_mcmc(x$posterior, period=100))
 
-bayes_50yr_retlvl = return_level_mcmc(bayes_params)
-bayes_100yr_retlvl = return_level_mcmc(bayes_params)
+bayes_50yr_retlvl = lapply(bayes_params, return_level, period=50)
+bayes_100yr_retlvl = lapply(bayes_params, return_level, period=100)
 
 
 ```
