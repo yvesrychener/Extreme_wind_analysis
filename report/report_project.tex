@@ -141,6 +141,7 @@ Before, we estimated the dependance between CAPE and SRH. We can also verify the
 \section*{Calculation of Return Levels}
 
 \section*{Impact by Using Variable Transfromations}
+We argue (without testting this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependance analysis would yield different results, since if the shape parameter has linear dependance in log space, it has exponential dependance in linear space. To do the same analysis, we would have to use a transformed trend $trend_{new}= log(trend)$. 
 
 \section*{Conclusion}
 
