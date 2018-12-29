@@ -214,6 +214,10 @@ mle_scale = unlist(lapply(monthly_fits, function(x) x$estimate[2]))
 mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
 mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
 mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
+
+mle_50yr_retlvl = lapply(monthly_fits, return_level, period=50)
+mle_100yr_retlvl = lapply(monthly_fits, return_level, period=100)
+
 ```
 
 
@@ -459,6 +463,8 @@ chi_95level = qchisq(1-0.05/12,1)
 
 plot(unlist(ratios),main="95% confidence test for time independance, \nBonferroni multiple Testing", xlab="Month",ylab="Likelihood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
+
+
 
 ```
 
@@ -731,7 +737,7 @@ for (i in 1:12) {
 
   # USE QUANTILES
   bivar_100yr_retlvl[i] = quantile(sim_prod, probs=1-1/100, na.rm = T)
-  bivar_50yr_retlvl[i] = quantile(sim_prod, probs =1- 1/50, na.rm = T)
+  bivar_50yr_retlvl[i] = quantile(sim_prod, probs =1-1/50, na.rm = T)
 
 }
 ```
@@ -741,14 +747,14 @@ plot(1:12, return_level_100, col="blue", ylim=c(0, 100000),
      main="100 Year Return Levels", pch=19)
 points(1:12, bivar_100yr_retlvl, col="red", pch=19)
 points(1:12, bayes_100yr_retlvl, col="green", pch=19)
-legend("topright", c("Bayesian", "Point Process", "Bivariate"), 
+legend("topright", c("BAY", "POI", "BIV"), 
        fill=c("green","blue","red"))
 
 plot(1:12, return_level_50, col="blue", ylim=c(0, 100000),
      main="50 Year Return Levels", pch=19)
 points(1:12, bivar_50yr_retlvl, col="red", pch=19)
 points(1:12, bayes_50yr_retlvl, col="green", pch=19)
-legend("topright", c("Bayesian", "Point Process", "Bivariate"), 
+legend("topright", c("BAY", "POI", "BIV"), 
        fill=c("green","blue","red"))
 
 

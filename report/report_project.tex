@@ -133,7 +133,7 @@ December  & 892.7  & 896.7  & 892.5  & 894.9  & 895.5  & 894.3
 \end{table}
 Note that for this fit, we extracted for each month the maximal $SRH$ value and the maximal $CAPE$ value and fitted the distribution to this data pair. However, the monthly maximum of these two independent variables don't necessarily correspond to the same event. We have therefore to be careful when drawing conclusions, since the "observations" we fit the models to often don't actually exist.
 \par
-Before, we estimated the dependence between CAPE and SRH. We can also these results with the fits we just made. For this we will use the dependence parameter $\alpha$ from the logistic model. For this model, we know that for independence $\alpha \to 1$ and for complete dependence $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependence parameters with 95\% confidence bands. This suggests that independence between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
+Before, we estimated the dependence between $CAPE$ and $SRH$. We can also these results with the fits we just made. For this we will use the dependence parameter $\alpha$ from the logistic model. For this model, we know that for independence $\alpha \to 1$ and for complete dependence $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependence parameters with 95\% confidence bands. This suggests that independence between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
 
 \begin{figure}
 	\centering
@@ -143,10 +143,19 @@ Before, we estimated the dependence between CAPE and SRH. We can also these resu
 \end{figure}
 
 \section*{Calculation of Return Levels}
-It is of interest to estimate the return levels of extreme events, 
+The return levels of extreme events is a quantity of interest for risk assessment. Here, we estimate the return levels using the different estimated fits obtained above. Notably, we compare 50- and 100 year return levels of $PROD$ using the location $\hat{\nu}$, scale $\hat{\tau}$ and shape $\hat{\xi}$ estimates obtained above for every month using maximum likelihood estimation (MLE), Bayesian fitting (BAY), the $r$-largest order statistics (LAR). 
+\par
+We also obtain the return levels using a Poisson process approach (POI): ????????
+\par
+Additionally, we compute return levels based on the bivariate fit as follows (BIV): Using the function \texttt{rbvevd} from the \texttt{evd} package, we simulate 500'000 observations of $SRH$ and $CAPE$ using the fitted distribution obtained above with the negative logarithmic link function. We then calculate the resulting $PROD$ value of the simulated observation pairs. From this, we obtain the $n$-year return level as the $1-1/n$ quantile. 
+\par
+The results show (FIGURE!!!) that the values obtained using the Poisson process approach correspond well with the Bayesian results. Both show a seasonal trend for both the 50-year and 100-year return levels, with values in spring and the lowest during late fall and winter. The Bayesian results seem to be more smooth throughout the year, which probably more realistic than high fluctuations between months. 
+\par
+Return levels estimated with the bivariate fit are generally higher than the others. This is likely due to the problematic discussed above, that simultaneous monthly maxima of $CAPE$ and $SRH$ are simulated. Since the maxima of these two values don't necessarily occur simultaneously, as illustrated by their asymptotic independence, we simulate values of $PROD$ that overestimate the actual values. Hence, the return levels obtained this way likely overestimate the ground truth. Similar seasonality is observed as in the case of the other results. 
+\par
+While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY, while it is the highest for POI. WIESO?????
 
-
-\section*{Impact by Using Variable Transfromations}
+\section*{Impact by Using Variable Transformations}
 We argue (without testing this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results: Since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $trend_{new}= log(trend)$. 
 
 \section*{Conclusion}
