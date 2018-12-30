@@ -77,6 +77,18 @@ The proposal standard deviations were fine-tuned to obtain acceptance rates betw
 	\label{fig:r_diag}
 \end{figure}
 We then investigated how taking into account the $r$-largest values for every month affects the fit. For fitting the $r$-largest order statistic, we have to find the best $r$ first. This was done by comparing the different parameter standard deviations and MLE deviances: When taking into account $r$ largest values, the standard deviation for all parameters is expected to be reduced by a factor $\sqrt{r}$ with respect to the model using only maxima. If it is reduced by less, this suggests that the additional order statistics don't bring important information and thus don't improve the fit. Similarly, the deviance is expected to be reduced when using more data. However, if this reduction of deviance is small, this again suggests that the additional order statistics don't improve the data. Using these paradigms, we found a reasonable choice to be $r=2$. This choice was confirmed using the diagnostic plots (Figure \ref{fig:r_diag}), which indicated a good fit for all months with exception of July. In Figure \ref{fig:r_diag}, we show the diagnostic plots for May to exemplify a good fit and July to show it's poor fit. 
+\par
+We then compare the estimates for the location, shape and scale parameter obtained by these three methods. As we observe in Figure \ref{fig:params}, all three parameters obtained with maximum likelihood estimation and Bayesian inference correspond well. This indicates that the fit is stable. However, the fit obtained with the two largest order statistic doesn't correspond to the other estimated values, for neither of the three parameters. This is likely due to clustering of extremes, when maxima appear in a grouped fashion. In this case, the two largest order statistics may belong to the same single weather event. The independence assumption thus no longer holds, and the fit quality deteriorates. Due to this result, the two-largest order statistic fit will not be considered in further analysis.
+\par
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/evolution_eta.pdf}\\
+	\includegraphics[width=0.35\textwidth]{../plots/evolution_tao.pdf}\\
+	\includegraphics[width=0.35\textwidth]{../plots/evolution_xi.pdf}\\
+	\caption{Location, scale and shape parameter estimates of GEV distribution, when fitted to monthly extremes of PROD values for every month separately, using maximum likelihood estimation, Bayesian fitting and the $r$-largest order statistics (with $r=2$).}
+	\label{fig:params}
+\end{figure}
+When considering the evolution of the three parameters as estimated with maximum likelihood and Bayesian fitting over the course of the year, the following can be observed: Both location and shape parameters are higher during summer than during winter months. According to this result, $PROD$ values are more variable and more extreme during this period, leading to more intense thunderstorms. Moreover, the shape parameter is non-negative for all months except July. This suggests that during these months, there exists no upper bound to $PROD$ values. In July however, the shape parameter is negative, in fact by more than two standard errors (not shown). This significantly indicates a negative shape parameter and an associated upper bound for $PROD$ values. However, we argue that since we expect some smoothness of weather behavior throughout the year, there is no reason for one month to admit for an upper bound when all others don't. This result is likely a relic of the small amount of data and thus the variability of the fit. 
 
 \section*{Dependence of PROD on Time and ENSO}
 A dependence test of $PROD$ on a factor $x$ can be done by likelihood ratio test. Within the scope of this analysis, dependence on time and ENSO as determined by the NINO 3.4 index is assessed. Before fitting the linear trend, we center and renormalise the influencing factor with respect to its mean and standard deviation as recommended in the \texttt{fgev} help files. We tested for linear dependence to account for gradual regime changes, and for a step function dependence centered at the factor mean to allow for rapid changes. More formally, the linear dependence is modeled
@@ -111,8 +123,7 @@ It is interesting that the month of December is consistently determined to be ti
 \section*{Clustering of Extremes}
 The general theory for the GEV is under the assumption that the samples are independent. If dependence is present, we can estimate the clustering using the extremal index $\theta$. There are many interpretations of the extremal index, we will only give 2 here. An intuitive interpretation is that $\theta^{-1}$ is the mean limiting size of the clusters of threshold exceedances. For a more mathematical interpretation, let $\{X_i\}$ be a stationary process and let  $\{X_i^*\}$ be independent variables with the same marginal distribution. If the maxima of the $X_i$ have a limiting distribution $H(z)$ and the maxima of $X_i^*$ have a limiting distribution $H^*(z)$, then it can be shown that $H(z)=H^*(z)^\theta$. Since $\eta=\eta^*-\tau^*\frac{1-\theta^\xi}{\xi}\leq\eta^*$, the maxima of the independent variables have bigger extremes than the maxima of the dependent processes. 
 \par
-Figure \ref{fig:extremal_index} shows the extremal indexes for every month. Since they are smaller than one, some clustering does occur. This would affect the analysis of $r$-largest order statistics as well as peak-over-threshold analysis. However, models using monthly maxima aren't affected since they rely on only one value per month, making clustering irrelevant. Moreover, we see that the clusters are bigger in summer, with average cluster sizes of 4, in winter the average cluster sizes are more in the region of 2. This indicates that the necessary conditions for extreme thunderstorms are given for a longer time during summer, possibly also leading to longer-during thunderstorms than in winter. 
-%TODO: SCHRIBE DAS R LARGEST SCHLECHT ISCH
+Figure \ref{fig:extremal_index} shows the extremal indexes for every month. Since they are smaller than one, some clustering does occur. This would affect the analysis of $r$-largest order statistics as well as peak-over-threshold analysis. In fact it in part explains for the poor fit of the $r$-largest order statistics observed above. However, models using monthly maxima aren't affected since they rely on only one value per month, making clustering irrelevant. Moreover, we see that the clusters are bigger in summer, with average cluster sizes of 4, in winter the average cluster sizes are more in the region of 2. This indicates that the necessary conditions for extreme thunderstorms are given for a longer time during summer, possibly also leading to longer-during thunderstorms than in winter. 
 
 \begin{figure}
 	\centering
@@ -185,16 +196,24 @@ Before, we estimated the dependence between $CAPE$ and $SRH$. We can also these 
 \section*{Calculation of Return Levels}
 The return levels of extreme events is a quantity of interest for risk assessment. Here, we estimate the return levels using the different estimated fits obtained above. Notably, we compare 50- and 100 year return levels of $PROD$ using the location $\hat{\nu}$, scale $\hat{\tau}$ and shape $\hat{\xi}$ estimates obtained above for every month using maximum likelihood estimation (MLE), Bayesian fitting (BAY), the $r$-largest order statistics (LAR). 
 \par
-We also obtain the return levels using a Poisson process approach (POI): %TODO ????????
+We also obtain the return levels using a Poisson process approach (POI). To this effect, we use the \texttt{fpot} function of the \texttt{evd} package and a threshold set to the 95\% quantile of the monthly observed data. Whereas the fit failed in February, it performed well in all other months as assessed by the built-in diagnostic plots (not shown). % TODO: WAS MACHT r=1
 \par
 Additionally, we compute return levels based on the bivariate fit as follows (BIV): Using the function \texttt{rbvevd} from the \texttt{evd} package, we simulate 500'000 observations of $SRH$ and $CAPE$ using the fitted distribution obtained above with the negative logarithmic link function. We then calculate the resulting $PROD$ value of the simulated observation pairs. From this, we obtain the $n$-year return level as the $1-1/n$ quantile. 
 \par
-% TODO: RETURN LEVEL
-The results in Figure \ref{fig:return_lvl} that the values obtained using the Poisson process approach correspond well with the Bayesian results. Both show a seasonal trend for both the 50-year and 100-year return levels, with values in spring and the lowest during late fall and winter. The Bayesian results seem to be more smooth throughout the year, which probably more realistic than high fluctuations between months. 
+The results in Figure \ref{fig:return_lvl} that the values obtained using the Poisson process approach correspond well with the Bayesian results. Both show a seasonal trend for both the 50-year and 100-year return levels, with values in spring and the lowest during late fall and winter. The Bayesian results seem to be more smooth throughout the year, which is probably more realistic than high fluctuations between months. 
 \par
 Return levels estimated with the bivariate fit are generally higher than the others. This is likely due to the problematic discussed above, that simultaneous monthly maxima of $CAPE$ and $SRH$ are simulated. Since the maxima of these two values don't necessarily occur simultaneously, as illustrated by their asymptotic independence, we simulate values of $PROD$ that overestimate the actual values. Hence, the return levels obtained this way likely overestimate the ground truth. Similar seasonality is observed as in the case of the other results. 
 \par
-While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY, while it is the highest for POI. % TODO WIESO??? 
+While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY while it is the highest for POI. Since the Bayesian model has been determined as stable above, its corresponding return values can most likely be best trusted. The Poisson model fit failed in February as indicated above, which explains its discrepancy with respect to the Bayesian model. An explanation for the exceptionally high BIV return values in these two months would be if both high $SRH$ and $CAPE$ values could be observed, but never simultaneously. Grouping the extreme values into a single observation would lead to a particularly high overestimate of the return level, which may be what we observe here.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/50yr_return.pdf}
+	\includegraphics[width=0.35\textwidth]{../plots/100yr_return.pdf}
+	\caption{50- and 100 year return levels of PROD, as assessed with Bayesian estimation (BAY) of GEV parameters, poisson-process fitting (POI) to peak-over-threshold values, and simulating from a bivariate GEV distribution fitted to SRH and CAPE.}
+	\label{fig:return_lvl}
+\end{figure}
+
 
 \section*{Impact by Using Variable Transformations}
 We argue (without testing this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results: Since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $x_{new}= log(x)$. 
@@ -208,8 +227,8 @@ A clear deficit of the analysis performed in this report is the lack of data: Wh
 
 
 %%% Bibliography
-\bibliographystyle{IEEEtran}
-\bibliography{literature-project}
+%\bibliographystyle{IEEEtran}
+%\bibliography{literature-project}
 
 
 % TODO:
