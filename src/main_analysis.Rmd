@@ -199,22 +199,60 @@ gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
 
 find a good r for january
 ```{r}
-zeros = 0*(1:10)
-se_df_jan = data.frame(1:10,zeros,zeros,zeros,zeros)
+month = 1
+zeros = 0*(2:10)
+se_df_jan = data.frame(2:10,zeros,zeros,zeros,zeros)
 colnames(se_df_jan) = c("r","SE-mu","SE-sig","SE-sh","2l")
-largest_10 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:10]]))
-for (i in 1:10){
-  fit = rlarg.fit(largest_10$jan,r=i)
-  se_df_jan[i,2:4]=fit$se
-  se_df_jan[i,5]=fit$nllh
+colnames_dat = c("V1","V2")
+for (i in 2:10){
+  largest_i = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:i]]))
+  rlarg_df = as.data.frame(largest_i[month])
+  colnames(rlarg_df) = colnames_dat
+  x = cbind(rlarg_df$V1, rlarg_df$V2, rlarg_df$V3, rlarg_df$V4, rlarg_df$V5, rlarg_df$V6)
+  fit = rlarg.fit(x,show=FALSE)
+  se_df_jan[i-1,2:4]=fit$se
+  se_df_jan[i-1,5]=fit$nllh
+  colnames_dat = c(colnames_dat,sprintf("V%d",i+1))
 }
 print(se_df_jan)
 ```
+The deviance and standard deviations suggest taking r=2 is a reasonable choice
+
+
+Plot the diagnostics for r=2 (May):
+```{r}
+#---- Change i to view different months (for loop unfortunately not possible)
+i=5
+#----
+
+largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
+rlarg_df = as.data.frame(largest_6[i])
+colnames(rlarg_df) = c("V1", "V2")
+x = cbind(rlarg_df$V1, rlarg_df$V2)
+fit = rlarg.fit(x,show=FALSE)
+rlarg.diag(fit)
+
+```
+Now for July
+```{r}
+#---- Change i to view different months (for loop unfortunately not possible)
+i=
+#----
+
+largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
+rlarg_df = as.data.frame(largest_6[i])
+colnames(rlarg_df) = c("V1", "V2")
+x = cbind(rlarg_df$V1, rlarg_df$V2)
+fit = rlarg.fit(x,show=FALSE)
+rlarg.diag(fit)
+
+```
+
 
 
 ```{r}
-largest_10 = get_monthly(alarpply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:4]]))
-largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2]))
+largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
+largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2],show=FALSE))
 
 ```
 
@@ -230,8 +268,8 @@ mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
 mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
 mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
 
-mle_50yr_retlvl = lapply(monthly_fits, return_level, period=50)
-mle_100yr_retlvl = lapply(monthly_fits, return_level, period=100)
+#mle_50yr_retlvl = lapply(monthly_fits, return_level, period=50)
+#mle_100yr_retlvl = lapply(monthly_fits, return_level, period=100)
 
 ```
 
@@ -350,7 +388,7 @@ bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sd))
 ```
 
 
-TODO-> R largest fit
+
 
 
 
@@ -502,7 +540,7 @@ monthly_eindex <- function(data, threshold_p, r=0){
 }
 
 ei = monthly_eindex(get_monthly(prod_ts), 0.95)
-plot(unlist(ei), main="Extremal Index by Month, 95%-Quantile as Threshold", xlab="Month", ylab="Extremal index")
+plot(unlist(ei), main="Extremal Index by Month", xlab="Month", ylab="Extremal index")
 ```
 
 We observe that the extremal index is ~0.25-~0.45, we can therefore conclude that we have strong dependance of extremes, with the limiting mean cluster size being roughly from 2 to 4. The clustering has no effect for estimaters based on the (monthly) maximum, but the r largest estimator is influenced by it.
@@ -546,7 +584,7 @@ for(i in 1:12){
 }
 
 ```
-The fit in february has completely failed, and the others are not very good either
+The fit in february has completely failed, and the others are ok.
 
 We will still estimate the return levels:
 ```{r}

@@ -24,7 +24,7 @@
 
 
 \begin{abstract}
-
+Modelling extreme conditions has many applications in Finance, Insurance, Environment and others. In this article we report the results of our analysis on the extreme weather conditions leading to extreme thunderstorm, carried out as a project for the EPFL course "MATH-447, Risk, Rare Events and Extremes". We estimated the maximal distributions of Connective Available Potential Energy ($CAPE$) and the Storm Relative Helicity ($SRH$) using various techniques, in order to calculate $PROD = \sqrt{CAPE} \times SRH$, a proxy to asses thunderstorm risk.
 \end{abstract}
 
 \section*{Introduction} 
@@ -57,7 +57,7 @@ In order to understand the behavior of the monthly maxima, we fitted a generaliz
 	\label{fig:mle_diag}
 \end{figure}
 \par
-First, we fitted the values using maximum likelihood estimation. Fitting was done using the evd package in R, using the Nelder-Mead optimization method and standard parameters \cite{evd}. The quality of the fit was assessed using diagnostic plots, as shown for January and December in Figure \ref{fig:mle_diag}. The model performed well with the exception of September and December: In September optimization didn't succeed, whereas in December the observed values lie outside of the given confidence intervals, as shown in Figure \ref{fig:mle_diag}. For both of these months, no standard error could be calculated due to singularity of the observed Fisher information matrix. Since we expect some continuity over the course of the year, the problem wasn't further investigated as inferences for the missing months can be made from their adjacent months. 
+First, we fitted the values using maximum likelihood estimation (MLE). Fitting was done using the evd package in R, using the Nelder-Mead optimization method and standard parameters \cite{evd}. The quality of the fit was assessed using diagnostic plots, as shown for January and December in Figure \ref{fig:mle_diag}. The model performed well with the exception of September and December: In September optimization didn't succeed, whereas in December the observed values lie outside of the given confidence intervals, as shown in Figure \ref{fig:mle_diag}. For both of these months, no standard error could be calculated due to singularity of the observed Fisher information matrix. Since we expect some continuity over the course of the year, the problem wasn't further investigated as inferences for the missing months can be made from their adjacent months. 
 \par
 Then, we fitted the values using the Metropolis-Hastings algorithm. As a prior for the three parameters, a normal distribution with mean zero and a diagonal covariance matrix was used.
 Here, we will give an intuitive explanation of the Metropolis-Hastings algorithm; for a more detailed and mathematically rigorous explanation, please refer to slides 82-86 of the course slides.
@@ -67,6 +67,16 @@ We can imagine the sampling as follows: An agent is navigating the Markov chain.
 \par
 The proposal standard deviations were fine-tuned to obtain acceptance rates between 0.2 and 0.4. In order to avoid having to fine-tune every month separately, we implemented the following very simple optimization algorithm: If the acceptance rates for a given parameter were too high, the proposal standard deviation for said parameter were multiplied with 1.5. In the opposite case for low acceptance rates, the proposal standard deviation was divided by 2. The Metropolis-Hastings algorithm was run with 30'000 iterations. The chain was thinned with a factor 300 in order to avoid dependence between steps of the Markov chain. The thinning was validated with autocorrelation plots (not shown). The final parameter was determined to be the median of the posterior distribution, in order to be robust to outliers and be more adapted to skewed distributions. 
 \par
+\begin{figure}
+	\centering
+	\textbf{May}\\
+	\includegraphics[width=0.35\textwidth]{../plots/r_larg_diag_may.pdf}\\
+	\textbf{July}\\
+	\includegraphics[width=0.35\textwidth]{../plots/r_larg_diag_july.pdf}
+	\caption{Diagnostic plots for fitting r-largest-order statistic for January (top) and December (bottom). Whereas in may the model fits the data very well, as shown by the fact that the observed values are within the confidence range for return level plot, this is not the case for July, indicating a poor fit. Also the probability plot indicates a better fit in May.}
+	\label{fig:r_diag}
+\end{figure}
+For fitting the r-largest order statistic, we have to find the best r first. This was done by comparing the different parameter standard deviations and MLE deviances. We found a reasonable choice to be $r=2$. This choice was confirmed using the diagnositc plots (Figure \ref{fig:r_diag}), which looked good for most months. In Figure \ref{fig:r_diag}, we give as always a good and a bad example, so the reader can estimate the range of fits that were obtained.
 
 \section*{Dependence of PROD on Time and ENSO}
 A dependence test of $PROD$ can be done by likelihood ratio test. For this, we test the model with constant parameters (null hypothesis) against the model with linear dependence for the location parameter (alternative hypothesis), i.e. $\eta = \eta_0 + \eta_1*x$, where $x$ is the trend. When taking a linear trend, we center and renormalise the trend  as recommended in the \textit{fgev} help files. We employ the Bonferroni multiple testing method to take into account the multiple tests at 95\% significance level (arising from the different months tested). Figure \ref{fig:dependance_test} displays the different ratios and the significance level (red) for the 95\% test. We see that the test is rejected in October for $ENSO$ dependence, and in December for time dependence. Independence can however not be ruled out for the other months. We also test a step function trend, simulating a regime change. The step function trend is calculated as $x_{step} = step(renormalised(x))$. Here the step function is defined as $step(x) = \begin{cases} 1 & if x>0\\ 0 & otherwise \end{cases}$. The formula for the corrected $\eta$ is now $\eta = \eta_0 + \eta_1*x_{step}$. With a step trend, the independence assumption can only be rejected for December time dependence (Figure \ref{fig:dependance_test_step}).
@@ -84,9 +94,24 @@ DA SÖTT NO E CONCLUSION HERE...
 	\centering
 	\includegraphics[width=0.35\textwidth]{../plots/enso_dependance_step.pdf}\\
 	\includegraphics[width=0.35\textwidth]{../plots/time_dependance_step.pdf}
-	\caption{Plots for likelihood ratios and 95\% significance levels for linear dependence}
+	\caption{Plots for likelihood ratios and 95\% significance levels for step dependence}
 	\label{fig:dependance_test_step}
 \end{figure}
+\section*{Clustering of Extremes}
+The general theory for the GEV is under the assumption that the samples are independent. If dependance is present, we can estimate the clustering using the extremal index $\theta$. There are many interpretations of the extremal index, we will only give 2 here. An intuitive interpretation is that $\theta^{-1}$ is the mean limiting size of the clusters of threshold exceedances. For a more mathematical interpretation, let $\{X_i\}$ be a stationary process and let  $\{X_i^*\}$ be independant variables with the same marignal distribution. If the maxima of the $X_i$ have a limiting distribution $H(z)$ and the maxima of $X_i^*$ have a limiting distribution $H^*(z)$, then it can be shown that $H(z)=H^*(z)^\theta$. Since $\eta=\eta^*-\tau^*\frac{1-\theta^\xi}{\xi}\leq\eta^*$, the maxima of the independent variables have bigger extremes than the maxima of the dependent process. We fitted our models in the previous section to the maxima, assuming independence. Our estimates of the return level would therefore overestimate the extremes. This problem is hovever only present in the POT and R-largest analysis, since when we take the maximum of each month, it does not matter if the 2nd largest is correlated. Figure \ref{fig:extremal_index} suggests that the clusters are bigger in summer, with average cluster sizes of 4, in winter the average cluster sizes are more in the region of 2.
+\begin{figure}
+	\centering
+	\includegraphics[width=0.35\textwidth]{../plots/extermal_index.pdf}
+	\caption{Extremal index estimation using evd function exi}
+	\label{fig:extremal_index}
+\end{figure}
+
+
+\section*{Approach to Analysing Annual Maxima for all Months Together}
+In our analyis, we have clearly seen that there is seasonlality in the data. If we would have to fit a distribution to a dataset without splitting the months, the best approach in our opinion would be to account for this seasonality by including a seasonal paramerter (sinusoidal) in $\eta$, such that the location parameter would be estimated by $\eta = \eta_0 + \eta_1*x$, where $x$ is a seasonality trend. For example we could take $x=cos(\frac{2\pi m}{12}-\alpha)$, where $m$ is the month index and $\alpha$ is an appropriate shift. The problem would be that while we do incoperate seasonality in the location paramter, we don't in the scale and shape parameter. The obvious strength of this approach would be that we could make inference about the annual maxima and their return levels. Also, we would have 12 times as many datapoints, which would be  a substantial improvement from the only 37 samples we have now (for monthly maxima).
+\par
+We believe that it would be possible however, to estimate annual maxima and their return levels from our analyis above. For this, we would propose sampling extremes for each month, and then estimate return levels for the annual maxima. This approach is similar to what we incorperate for the return level calculation with the bivariate fit.
+
 
 \section*{Dependence of CAPE and SRH}
 Asymptotic dependence (or independence) of bivariate maxima of two random variables can be estimated using $\chi$ and $\bar{\chi}$ plots as provided by the \texttt{chiplot} function of the \texttt{evd} package \cite{evd}. The $\chi$ plot estimates for two random variables, $X \sim F_X$ and $Y \sim F_Y$, the probability 
@@ -156,7 +181,7 @@ Return levels estimated with the bivariate fit are generally higher than the oth
 While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY, while it is the highest for POI. WIESO?????
 
 \section*{Impact by Using Variable Transformations}
-We argue (without testing this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results: Since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $trend_{new}= log(trend)$. 
+We argue (without testing this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results: Since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $x_{new}= log(x)$. 
 
 \section*{Conclusion}
 
