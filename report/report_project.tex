@@ -112,7 +112,7 @@ It is interesting that the month of December is consistently determined to be ti
 The general theory for the GEV is under the assumption that the samples are independent. If dependence is present, we can estimate the clustering using the extremal index $\theta$. There are many interpretations of the extremal index, we will only give 2 here. An intuitive interpretation is that $\theta^{-1}$ is the mean limiting size of the clusters of threshold exceedances. For a more mathematical interpretation, let $\{X_i\}$ be a stationary process and let  $\{X_i^*\}$ be independent variables with the same marginal distribution. If the maxima of the $X_i$ have a limiting distribution $H(z)$ and the maxima of $X_i^*$ have a limiting distribution $H^*(z)$, then it can be shown that $H(z)=H^*(z)^\theta$. Since $\eta=\eta^*-\tau^*\frac{1-\theta^\xi}{\xi}\leq\eta^*$, the maxima of the independent variables have bigger extremes than the maxima of the dependent processes. 
 \par
 Figure \ref{fig:extremal_index} shows the extremal indexes for every month. Since they are smaller than one, some clustering does occur. This would affect the analysis of $r$-largest order statistics as well as peak-over-threshold analysis. However, models using monthly maxima aren't affected since they rely on only one value per month, making clustering irrelevant. Moreover, we see that the clusters are bigger in summer, with average cluster sizes of 4, in winter the average cluster sizes are more in the region of 2. This indicates that the necessary conditions for extreme thunderstorms are given for a longer time during summer, possibly also leading to longer-during thunderstorms than in winter. 
-SCHRIBE DAS R LARGEST SCHLECHT ISCH
+%TODO: SCHRIBE DAS R LARGEST SCHLECHT ISCH
 
 \begin{figure}
 	\centering
@@ -173,27 +173,28 @@ December  & 892.7  & 896.7  & 892.5  & 894.9  & 895.5  & 894.3
 \end{table}
 Note that for this fit, we extracted for each month the maximal $SRH$ value and the maximal $CAPE$ value and fitted the distribution to this data pair. However, the monthly maximum of these two independent variables don't necessarily correspond to the same event. We have therefore to be careful when drawing conclusions, since the "observations" we fit the models to often don't actually exist.
 \par
-Before, we estimated the dependence between $CAPE$ and $SRH$. We can also these results with the fits we just made. For this we will use the dependence parameter $\alpha$ from the logistic model. For this model, we know that for independence $\alpha \to 1$ and for complete dependence $\alpha \to 0$. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependence parameters with 95\% confidence bands. This suggests that independence between $SRH$ and $CAPE$ cannot be ruled out, in accordance to our analysis in the previous paragraph.
+Before, we estimated the dependence between $CAPE$ and $SRH$. We can also these results with the fits we just made. For this we will use the dependence parameter $r$ from the negative logistic model. This positive parameter tends to infinity for dependence, and to zero for independence. In Figure \ref{fig:cape_srh_dependance_logistic} we plot the dependence parameters for every month with crude estimates of 95\% confidence bands using the standard error of the parameter. Since all of the dependence parameters are close to zero, independence cannot be ruled out. 
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.35\textwidth]{../plots/dependance_parameter_cape_srh_logistic.pdf}
-	\caption{Monthly dependence parameter $\alpha$ with 95\% confidence bands.}
+	\includegraphics[width=0.35\textwidth]{../plots/monthly_dependence.pdf}
+	\caption{Monthly dependence parameter $r$ with 95\% confidence intervals, compared to independence ($r=0$)}
 	\label{fig:cape_srh_dependance_logistic}
 \end{figure}
 
 \section*{Calculation of Return Levels}
 The return levels of extreme events is a quantity of interest for risk assessment. Here, we estimate the return levels using the different estimated fits obtained above. Notably, we compare 50- and 100 year return levels of $PROD$ using the location $\hat{\nu}$, scale $\hat{\tau}$ and shape $\hat{\xi}$ estimates obtained above for every month using maximum likelihood estimation (MLE), Bayesian fitting (BAY), the $r$-largest order statistics (LAR). 
 \par
-We also obtain the return levels using a Poisson process approach (POI): ????????
+We also obtain the return levels using a Poisson process approach (POI): %TODO ????????
 \par
 Additionally, we compute return levels based on the bivariate fit as follows (BIV): Using the function \texttt{rbvevd} from the \texttt{evd} package, we simulate 500'000 observations of $SRH$ and $CAPE$ using the fitted distribution obtained above with the negative logarithmic link function. We then calculate the resulting $PROD$ value of the simulated observation pairs. From this, we obtain the $n$-year return level as the $1-1/n$ quantile. 
 \par
-The results show (FIGURE!!!) that the values obtained using the Poisson process approach correspond well with the Bayesian results. Both show a seasonal trend for both the 50-year and 100-year return levels, with values in spring and the lowest during late fall and winter. The Bayesian results seem to be more smooth throughout the year, which probably more realistic than high fluctuations between months. 
+% TODO: RETURN LEVEL
+The results in Figure \ref{fig:return_lvl} that the values obtained using the Poisson process approach correspond well with the Bayesian results. Both show a seasonal trend for both the 50-year and 100-year return levels, with values in spring and the lowest during late fall and winter. The Bayesian results seem to be more smooth throughout the year, which probably more realistic than high fluctuations between months. 
 \par
 Return levels estimated with the bivariate fit are generally higher than the others. This is likely due to the problematic discussed above, that simultaneous monthly maxima of $CAPE$ and $SRH$ are simulated. Since the maxima of these two values don't necessarily occur simultaneously, as illustrated by their asymptotic independence, we simulate values of $PROD$ that overestimate the actual values. Hence, the return levels obtained this way likely overestimate the ground truth. Similar seasonality is observed as in the case of the other results. 
 \par
-While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY, while it is the highest for POI. WIESO??? 
+While the different models yield consistent seasonality results in general, a discrepancy is observed in January and February for the 100 year levels which are estimated as being the highest by BIV. In contrast, the values in January are among the lowest for both the BAY and POI, whereas February is also low for BAY, while it is the highest for POI. % TODO WIESO??? 
 
 \section*{Impact by Using Variable Transformations}
 We argue (without testing this explicitly), that using a $log(\cdot)$ transformation on $CAPE$, $SRH$ and $PROD$ would not change our analysis much. If $CAPE$ and $SRH$ arise from a joint distribution $F$, then $log(CAPE)$ and $log(SRH)$ arise from a distribution $F'$. The \textit{Extremal Types Theorem} (Seen on slide 31 of the course) shows that if a limiting extremal distribution exists, it must be the GEV. Since the $log(\cdot)$ operation maps values $x>1$ to $log(x)<x$, the upper tails will be lighter and the distribution will exist. The dependence analysis would yield different results: Since if the shape parameter has linear dependence in log space, it has exponential dependence in linear space. To do the same analysis, we would have to use a transformed trend $x_{new}= log(x)$. 
@@ -215,7 +216,8 @@ A clear deficit of the analysis performed in this report is the lack of data: Wh
 % Explain why discrepancy
 % Schribe das r-largest eue schlecht isch
 % Parameter vergliiche vode verschidnige fitting methode
-% Return level plot iifüege
-% Dependence i report dritue
+% Poisson process approach
+% Bibliographie!!!
+
 
 \end{document}
