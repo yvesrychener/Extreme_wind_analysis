@@ -226,7 +226,7 @@ i=5
 #----
 
 largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
-rlarg_df = as.data.frame(largest_6[i])
+rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
@@ -236,11 +236,10 @@ rlarg.diag(fit)
 Now for July
 ```{r}
 #---- Change i to view different months (for loop unfortunately not possible)
-i=
 #----
 
 largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
-rlarg_df = as.data.frame(largest_6[i])
+rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
@@ -387,6 +386,57 @@ bayes_stderr = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, sd))
 
 ```
 
+
+
+** LOOK AT PARAMETER SEAONALITY WITH DIFFERENT METHODS **
+```{r}
+
+
+pdf(paste("../plots/evolution_eta.pdf"), width = 7, height = 5)
+plot(1:12, mle_loc, col="blue", ylim=c(0, 20000),
+     main="Location Parameter", pch=19, ylab="Location", xlab="Month")
+points(1:12, 
+       lapply(bayes_params, function (x) x["mu"]), 
+       col="red", pch=19)
+points(1:12, 
+       lapply(largest_2_fit, function(x) x$mle[1]), 
+       col="green", pch=19)
+legend("topright", c("MLE", "Bayesian", "r-Largest"), 
+       fill=c("green","blue","red"))
+dev.off()
+
+
+pdf(paste("../plots/evolution_tao.pdf"), width = 7, height = 5)
+plot(1:12, mle_scale, col="blue", ylim=c(0, 40000),
+     main="Scale Parameter", pch=19, ylab="Scale", xlab="Month")
+points(1:12, 
+       lapply(bayes_params, function (x) x["sigma"]), 
+       col="red", pch=19)
+points(1:12, 
+       lapply(largest_2_fit, function(x) x$mle[2]), 
+       col="green", pch=19)
+legend("topright", c("MLE", "Bayesian", "r-Largest"), 
+       fill=c("green","blue","red"))
+dev.off()
+
+
+pdf(paste("../plots/evolution_xi.pdf"), width = 7, height = 5)
+plot(1:12, mle_shape, col="blue", ylim=c(-1, 1),
+     main="Shape parameter", pch=19, ylab="Shape", xlab="Month")
+points(1:12, 
+       lapply(bayes_params, function (x) x["xi"]), 
+       col="red", pch=19)
+points(1:12, 
+       lapply(largest_2_fit, function(x) x$mle[3]), 
+       col="green", pch=19)
+legend("topright", c("MLE", "Bayesian", "r-Largest"), 
+       fill=c("green","blue","red"))
+dev.off()
+
+
+
+
+```
 
 
 
@@ -796,20 +846,23 @@ for (i in 1:12) {
 ```
 
 ```{r}
-plot(1:12, return_level_100, col="blue", ylim=c(0, 100000),
-     main="100 Year Return Levels", pch=19)
+pdf(paste("../plots/100yr_return.pdf"), width = 7, height=5)
+plot(1:12, return_level_100, col="blue", ylim=c(0, 80000),
+     main="100 Year Return Levels", pch=19, ylab="PROD", xlab="Month")
 points(1:12, bivar_100yr_retlvl, col="red", pch=19)
 points(1:12, bayes_100yr_retlvl, col="green", pch=19)
 legend("topright", c("BAY", "POI", "BIV"), 
        fill=c("green","blue","red"))
+dev.off()
 
-plot(1:12, return_level_50, col="blue", ylim=c(0, 100000),
-     main="50 Year Return Levels", pch=19)
+pdf(paste("../plots/50yr_return.pdf"), width = 7, height = 5)
+plot(1:12, return_level_50, col="blue", ylim=c(0, 80000),
+     main="50 Year Return Levels", pch=19, ylab="PROD", xlab="Month")
 points(1:12, bivar_50yr_retlvl, col="red", pch=19)
 points(1:12, bayes_50yr_retlvl, col="green", pch=19)
 legend("topright", c("BAY", "POI", "BIV"), 
        fill=c("green","blue","red"))
-
+dev.off()
 
 ```
 
