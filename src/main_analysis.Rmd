@@ -95,69 +95,7 @@ for (i in 1:12) {
 ```
 
 
-```{r}
-# get the monthly maxima of prod
-m1 = as.data.frame(apply.monthly(prod_ts, max))$V1;
-# produce the gumbel qq plot
-gumbel_qq = function(x, title="") qqplot(qgumbel(c(1:length(x))/(length(x)+1)),
-                                         x,
-                                         main = paste("Gumbell Q-Q Plot", title),
-                                         xlab = "Theoretical Quantiles", 
-                                         ylab = "Sample Quantiles") ;
 
-gumbel_qq(m1)
-
-#qqplot(qgumbel(c(1:length(m1))/(length(m1)+1)),m1,main = "Gumbell Q-Q Plot",xlab = "Theoretical Quantiles", ylab = "Sample Quantiles") ;
-```
-The qq plot doesn't fit very well, especially in the lower tail. This is likely due
-to seasonal dependence.
-
-**Fitting GEV to the entire data**
-```{r}
-# fit gevd with MLE and produce diagnostic plots
-fitmax.MLE<-fgev(m1,method="Nelder-Mead")
-par(mfrow=c(2,2))
-fitmax.MLE
-plot(fitmax.MLE)
-```
-Poor fit, probably because the distribution isn't stationary. This is especially 
-visible in the Probability plot, in which the confidence band is surpassed, 
-indicating a poor fit.
-
-
-```{r}
-# fit gevd with Bayesian Techniques
-# use the previous outputs (rounded) as initial values (use a different shape)
-init<-c(1.6e4,4e3,0.1)
-# arbitrary priors
-mat <- diag(c(10000,10000,100)) 
-pn <- prior.norm(mean=c(0,0,0),cov=mat)
-# proposal standard deviation (found by trial and error to get 20%<acceptance rate<40%)
-psd<-c(500,0.03,0.02)
-# draw 3k samples from markov chain
-nit = 30000
-thinning = 300
-post<-posterior(nit, init=init,prior=pn,lh="gev",data=m1,psd=psd)
-# diagnostic plots
-MCMC<-mcmc(post[1:nit %% thinning == 0, ], thin=300) 
-plot(MCMC) 
-attr(mcmc(post),"ar")
-
-```
-
-
-```{r}
-#MCMC_stab <- mcmc(post, thin=50, start=1000)
-acf(mcmc(post[1:nit %% thinning == 0, ]))
-```
-We observe that there seem to be no substantial issues from the autocorrelation 
-plots. 
-
-```{r}
-apply(mcmc(post[1:nit %% thinning == 0, ]),2,mean)
-apply(mcmc(post[1:nit %% thinning == 0, ]),2,sd)
-
-```
 
 ** Fit with MLE for months separately**
 ```{r}
@@ -191,8 +129,49 @@ for (i in 1:12) {
 
 
 ```{r}
+gumbel_qq = function(x, title="") qqplot(qgumbel(c(1:length(x))/(length(x)+1)),
+                                         x,
+                                         main = paste("Gumbell Q-Q Plot", title),
+                                         xlab = "Theoretical Quantiles", 
+                                         ylab = "Sample Quantiles") ;
+
 gumbel_qq(data.frame(monthly_max[[9]])[,1], "September")
 gumbel_qq(data.frame(monthly_max[[12]])[,1], "December")
+```
+
+Extract Parameters for MLE:
+```{r}
+get_se = function(x, ix) {
+  if (is.null(x$std.err)) 0
+  else x$std.err[ix]
+}
+mle_loc = unlist(lapply(monthly_fits, function(x) x$estimate[1]))
+mle_loc_se = unlist(lapply(monthly_fits, get_se, 1))
+mle_scale = unlist(lapply(monthly_fits, function(x) x$estimate[2]))
+mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
+mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
+mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
+
+```
+
+Plot parameters from MLE:
+```{r}
+plot_w_err = function(x, y, se, se.conf_mult = 1,title = NULL) {
+  upper_error = y+se.conf_mult*se
+  lower_error = y-se.conf_mult*se
+  
+  max_y = max(upper_error)
+  min_y = min(lower_error)
+  
+  plot(x, y,
+       ylim = c(min_y, max_y),
+       main = title)
+  arrows(x,upper_error,x,lower_error, code=3, length=0.02, angle = 90)
+}
+plot_w_err(1:12, mle_loc, mle_loc_se, 1, "Location Parameter as Estimated with Likelihood")
+plot_w_err(1:12, mle_scale, mle_scale_se, 1, "Scale Parameter as Estimated with Likelihood")
+plot_w_err(1:12, mle_shape, mle_shape_se, 1, "Shape Parameter as Estimated with Likelihood")
+
 ```
 
 **Fit R largest order statistics**
@@ -219,7 +198,7 @@ print(se_df_jan)
 The deviance and standard deviations suggest taking r=2 is a reasonable choice
 
 
-Plot the diagnostics for r=2 (May):
+Plot the diagnostics for r=2 (May, good example):
 ```{r}
 #---- Change i to view different months (for loop unfortunately not possible)
 i=5
@@ -230,10 +209,12 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-rlarg.diag(fit)
+tryCatch({
+  rlarg.diag(fit)},
+  error=function(e){});
 
 ```
-Now for July
+Now for July, bad example:
 ```{r}
 #---- Change i to view different months (for loop unfortunately not possible)
 #----
@@ -243,54 +224,21 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-rlarg.diag(fit)
+tryCatch({
+  rlarg.diag(fit)},
+  error=function(e){});
 
 ```
 
 
-
+Fit the r-largest-order statistic
 ```{r}
 largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
-largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2],show=FALSE))
-
-```
-
-```{r}
-get_se = function(x, ix) {
-  if (is.null(x$std.err)) 0
-  else x$std.err[ix]
-}
-mle_loc = unlist(lapply(monthly_fits, function(x) x$estimate[1]))
-mle_loc_se = unlist(lapply(monthly_fits, get_se, 1))
-mle_scale = unlist(lapply(monthly_fits, function(x) x$estimate[2]))
-mle_scale_se = unlist(lapply(monthly_fits, get_se, 2))
-mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
-mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
-
-#mle_50yr_retlvl = lapply(monthly_fits, return_level, period=50)
-#mle_100yr_retlvl = lapply(monthly_fits, return_level, period=100)
+largest_2_fit = lapply(largest_2, function(x) rlarg.fit(x[ , 1:2],show=FALSE))
 
 ```
 
 
-```{r}
-plot_w_err = function(x, y, se, se.conf_mult = 1,title = NULL) {
-  upper_error = y+se.conf_mult*se
-  lower_error = y-se.conf_mult*se
-  
-  max_y = max(upper_error)
-  min_y = min(lower_error)
-  
-  plot(x, y,
-       ylim = c(min_y, max_y),
-       main = title)
-  arrows(x,upper_error,x,lower_error, code=3, length=0.02, angle = 90)
-}
-plot_w_err(1:12, mle_loc, mle_loc_se, 1, "Location Parameter as Estimated with Likelihood")
-plot_w_err(1:12, mle_scale, mle_scale_se, 1, "Scale Parameter as Estimated with Likelihood")
-plot_w_err(1:12, mle_shape, mle_shape_se, 1, "Shape Parameter as Estimated with Likelihood")
-
-```
 
 ** Fit with Bayesian Methods for months separately**
 ```{r}
@@ -443,12 +391,10 @@ dev.off()
 
 
 **PART 2**
-We perform 2 tests, first for linear depenance, then for step dependance (trend = int(rescaled(trend)>0))
+We perform 2 tests to check dependence, first for linear depenence, then for step dependence (trend = int(renormalise(trend)>0))
 
 First, we check if the location parameter depends on time using a likelihood ratio test
 ```{r}
-#monthly_fits = lapply(monthly_max, 
-#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
 ratios = list()
 trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
 trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
@@ -476,8 +422,6 @@ abline(a=chi_95level,b=0,col="red")
 
 Now, let's check for independance from ENSO
 ```{r}
-#monthly_fits = lapply(monthly_max, 
-#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
 ratios = list()
 # split nino data into months
 n = nino34
@@ -506,10 +450,8 @@ abline(a=chi_95level,b=0,col="red")
 
 ```
 
-Now the same for step dependance
+Now the same for step dependance (ENSO)
 ```{r}
-#monthly_fits = lapply(monthly_max, 
-#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
 ratios = list()
 # split nino data into months
 n = nino34
@@ -539,10 +481,9 @@ abline(a=chi_95level,b=0,col="red")
 
 ```
 
-
+Now the same for step dependance (time)
 ```{r}
-#monthly_fits = lapply(monthly_max, 
-#                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
+
 ratios = list()
 trend = 1:length(as.data.frame(monthly_max[[12]])$V1)
 trend = (trend-mean(trend))/sd(trend) # scale and center covariates as recommended
@@ -662,9 +603,7 @@ plot(unlist(return_level_50),main="50 Year Return level, estimated with point pr
 
 ```
 
-
-TODO: estimat with mcmc
-Assuming that we have the posterior densities of the markov chains, call theis function to plot return level histograms
+Now, we calculate the return levels using the bayesian approach:
 
 ```{r}
 return_level_mcmc = function(posterior,period=20, plot=F){
@@ -704,12 +643,12 @@ for (i in 1:length(data_monthly_bivariate)) {
 }
 ```
 
-It seems that the confidence intervals for chi contain the 0 horizontal line, we can therefore not conclude that cape and srh are dependant.
+It seems that the confidence intervals for chi and chibar contain the 0 horizontal line, we can therefore not conclude that cape and srh are dependant.
 
 
 
 **Part 7**
-We will now fit different bivariate models to the monthly maxima and compare them using AIC. We will also estimate the dependance using the logistic link. (if the confidence interval for dep does not contain 1, then we can conclude that there is dependance).
+We will now fit different bivariate models to the monthly maxima and compare them using AIC. We will also estimate the dependance using the negative logistic link. (if the confidence interval for dep does not contain 0, then we can conclude that there is dependance).
 
 ```{r}
 # prepare the data
@@ -731,12 +670,7 @@ for (i in 1:12) {
   # fit the data
   monthly_max_bivariate = cbind(as.numeric(monthly_max.cape[[i]]),
                                 as.numeric(monthly_max.srh[[i]]))
-  # fit1 = fbvevd(monthly_max_bivariate,model = "log")
-  # fit2 = fbvevd(monthly_max_bivariate,model = "alog",std.err = FALSE)
-  # fit3 = fbvevd(monthly_max_bivariate,model="neglog") 
-  # fit4 = fbvevd(monthly_max_bivariate,model="bilog", std.err = FALSE) 
-  # fit5 = fbvevd(monthly_max_bivariate,model="ct", std.err = FALSE) 
-  # fit6 = fbvevd(monthly_max_bivariate,model="negbilog", std.err = FALSE)
+  
   
   fit1 = fbvevd(monthly_max_bivariate,model = "log", method = "Nelder-Mead")
   fit2 = fbvevd(monthly_max_bivariate,model = "alog", method = "Nelder-Mead", std.err = FALSE)
@@ -749,7 +683,8 @@ for (i in 1:12) {
   names(bv_fits[[i]]) = bv_evd_models
   
   # plot the fit for diagnostics
-  par(mfrow=c(3,2)) 
+  # uncomment this and change fit to be plotted
+  #par(mfrow=c(3,2)) 
   #plot(fit1)
   
   # keep track of results
@@ -781,7 +716,7 @@ fit1, fit2, fit4, fit5, fit6
 
 The fit could not be plotted for fit3.
 
-We believe that there is no reason to assume that a different model should be used for different months, so we chose the logistic model. It is one of the best models in every month, and if it isn't, the difference is only very small.
+We believe that there is no reason to assume that a different model should be used for different months, so we chose the negative logistic model. It is one of the best models in every month, and if it isn't, the difference is only very small.
 
 The plot of the dependance parameter shows that our analysis does coincides with what we saw for the chi-chibar plot, the two series seem to have independant extremes.
 
@@ -793,7 +728,6 @@ bivar_50yr_retlvl = vector()
 for (i in 1:12) {
   n_sims = 500000
   mod_ix = c("neglog"=3) #Always use neglog
-  #mod_ix = which.min(AIC_df[i, ]) # Index of model with best AIC for given month
   estimate = bv_fits[[i]][[mod_ix]]$estimate
   model=names(mod_ix)
   # Pass appropriate parameters according to model
@@ -825,20 +759,8 @@ for (i in 1:12) {
 
   # Obtain simulated PROD value, get return levels
   sim_prod = sqrt(sim_vals[ , 1]) * sim_vals[ , 2]
-  
-  # GET RETURN LEVELS WITH MEAN OF MAX, DOESN'T REALLY MAKE SENSE
-  # #bivar_100yr_retlvl[i] = mean(apply(matrix(sim_prod, ncol=100), 2, max, na.rm=T),
-  #                              na.rm=T)
-  # #bivar_50yr_retlvl[i] = mean(apply(matrix(sim_prod, ncol=50), 2, max, na.rm=T),
-  #                             na.rm=T)
 
-  # TAKE N-TH LARGEST ORDER STATISTIC, WITH N = N_SIMS/RET_INTERVAL
-  #bivar_100yr_retlvl[i] = sort(sim_prod, #partial=n_sims/100,
-                               #decreasing=T)[n_sims/100]
-  #bivar_50yr_retlvl[i] = sort(sim_prod, #partial=n_sims/50,
-                              #decreasing=T)[n_sims/50]
-
-  # USE QUANTILES
+  # USE QUANTILES TO GET RETURN LEVELS
   bivar_100yr_retlvl[i] = quantile(sim_prod, probs=1-1/100, na.rm = T)
   bivar_50yr_retlvl[i] = quantile(sim_prod, probs =1-1/50, na.rm = T)
 

@@ -120,7 +120,6 @@ mle_shape = unlist(lapply(monthly_fits, function(x) x$estimate[3]))
 mle_shape_se = unlist(lapply(monthly_fits, get_se, 3))
 
 ### r largest order statistic ####
-#@YVU: Bruuchs ds, bzw was drvo
 month = 1 # Find good r for january
 zeros = 0*(2:10)
 se_df_jan = data.frame(2:10,zeros,zeros,zeros,zeros)
@@ -145,7 +144,9 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-rlarg.diag(fit)
+tryCatch({
+  rlarg.diag(fit)},
+  error=function(e){});
 
 # Plot Diagnostics for July
 i = 7 # Month
@@ -154,11 +155,13 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-rlarg.diag(fit)
+tryCatch({
+  rlarg.diag(fit)},
+  error=function(e){});
 
 # Fit all
 largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
-largest_2_fit = lapply(largest_10, function(x) rlarg.fit(x[ , 1:2],show=FALSE))
+largest_2_fit = lapply(largest_2, function(x) rlarg.fit(x[ , 1:2],show=FALSE))
 
 
 ### Bayesian ####
@@ -347,7 +350,7 @@ chi_95level = qchisq(1-0.05/12,1)
 plot(unlist(ratios),main="95% confidence test for independance from ENSO, \nBonferroni multiple testing", xlab="Month",ylab="Likelyhood Ratio Statistic")
 abline(a=chi_95level,b=0,col="red")
 
-### Step on time ####
+### Step on ENSO ####
 ratios = list()
 # split nino data into months
 n = nino34
@@ -376,7 +379,7 @@ plot(unlist(ratios),main="95% confidence test for independance from ENSO, \nBonf
 abline(a=chi_95level,b=0,col="red")
 
 
-### Step on ENSO ####
+### Step on time ####
 #monthly_fits = lapply(monthly_max, 
 #                      function(x) fgev(data.frame(x)[,1], method="Nelder-Mead"))
 ratios = list()
@@ -461,12 +464,6 @@ for (i in 1:12) {
   # fit the data
   monthly_max_bivariate = cbind(as.numeric(monthly_max.cape[[i]]),
                                 as.numeric(monthly_max.srh[[i]]))
-  # fit1 = fbvevd(monthly_max_bivariate,model = "log")
-  # fit2 = fbvevd(monthly_max_bivariate,model = "alog",std.err = FALSE)
-  # fit3 = fbvevd(monthly_max_bivariate,model="neglog") 
-  # fit4 = fbvevd(monthly_max_bivariate,model="bilog", std.err = FALSE) 
-  # fit5 = fbvevd(monthly_max_bivariate,model="ct", std.err = FALSE) 
-  # fit6 = fbvevd(monthly_max_bivariate,model="negbilog", std.err = FALSE)
   
   fit1 = fbvevd(monthly_max_bivariate,model = "log", method = "Nelder-Mead")
   fit2 = fbvevd(monthly_max_bivariate,model = "alog", method = "Nelder-Mead", std.err = FALSE)
