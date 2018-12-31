@@ -1,4 +1,10 @@
 #####
+#Important:
+#  Producing the rlargest diagnostic plot creates an error with the other plots, so
+#  if it has to be plotted, uncomment it on line 153 & 164.
+#  But then, the other plots will be faulty
+
+
 ### IMPORTS ####
 library(evd); 
 library(evdbayes);
@@ -144,9 +150,9 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-tryCatch({
-  rlarg.diag(fit)},
-  error=function(e){});
+#tryCatch({
+#  rlarg.diag(fit)},
+#  error=function(e){});
 
 # Plot Diagnostics for July
 i = 7 # Month
@@ -155,9 +161,9 @@ rlarg_df = as.data.frame(largest_2[i])
 colnames(rlarg_df) = c("V1", "V2")
 x = cbind(rlarg_df$V1, rlarg_df$V2)
 fit = rlarg.fit(x,show=FALSE)
-tryCatch({
-  rlarg.diag(fit)},
-  error=function(e){});
+#tryCatch({
+#  rlarg.diag(fit)},
+#  error=function(e){});
 
 # Fit all
 largest_2 = get_monthly(apply.monthly(prod_ts, function(x) x[order(x, decreasing=T)[1:2]]))
@@ -492,6 +498,19 @@ names(bv_fits) = month_names
 print(AIC_df)
 
 # plot depencance values for depenance analysis.
+plot_w_err = function(x, y, se, se.conf_mult = 1,title = NULL) {
+  upper_error = y+se.conf_mult*se
+  lower_error = y-se.conf_mult*se
+  
+  max_y = max(upper_error)
+  min_y = min(lower_error)
+  
+  plot(x, y,
+       ylim = c(min_y, max_y),
+       main = title)
+  arrows(x,upper_error,x,lower_error, code=3, length=0.02, angle = 90)
+}
+
 par(mfrow=c(1,1))
 plot_w_err(1:12, dep.estimate, dep.sd, 1.96,"Monthly Dependance Parameter vs Independance (Red)")
 abline(a=0,b=0,col="red")
