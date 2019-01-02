@@ -249,10 +249,11 @@ bayes_fitter_param_search = function(x,
 }
 
 
-monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = TRUE, 
-                           do_autoreg = TRUE,
-                           psd = c(500,0.3,0.3), nit_full=30000, nit_search = 30000,
-                           thinning = 300)
+monthly_bayes_fit = lapply(monthly_max, bayes_fitter_param_search, do_diagn = FALSE, 
+                           do_autoreg = FALSE,
+                           nit_full=30000, nit_search = 30000,
+                           thinning = 300, mat = diag(c(100000,100000,100)),
+                           init = c(1e4, 1e3, 0.1))
 acceptance_rates = lapply(monthly_bayes_fit, function(x) x$acceptance_rate[1, ])
 print(acceptance_rates)
 bayes_params = lapply(monthly_bayes_fit, function(x) apply(x$posterior, 2, median))
@@ -270,8 +271,8 @@ points(1:12,
 points(1:12, 
        lapply(largest_2_fit, function(x) x$mle[1]), 
        col="green", pch=19)
-legend("topright", c("MLE", "Bayesian", "r-Largest"), 
-       fill=c("green","blue","red"))
+legend("topright", c("MLE", "r-Largest", "Bayesian"), 
+       fill=c("blue","green","red"))
 dev.off()
 
 
@@ -284,8 +285,8 @@ points(1:12,
 points(1:12, 
        lapply(largest_2_fit, function(x) x$mle[2]), 
        col="green", pch=19)
-legend("topright", c("MLE", "Bayesian", "r-Largest"), 
-       fill=c("green","blue","red"))
+legend("topright", c("MLE", "r-Largest", "Bayesian"), 
+       fill=c("blue","green","red"))
 dev.off()
 
 
@@ -298,9 +299,10 @@ points(1:12,
 points(1:12, 
        lapply(largest_2_fit, function(x) x$mle[3]), 
        col="green", pch=19)
-legend("topright", c("MLE", "Bayesian", "r-Largest"), 
-       fill=c("green","blue","red"))
+legend("topright", c("MLE", "r-Largest", "Bayesian"), 
+       fill=c("blue","green","red"))
 dev.off()
+
 
 #####
 ### DEPENDENCE TESTS ####
@@ -573,15 +575,15 @@ return_level = function(x,period=20){
   level = loc + scale*(((-log(1-p))^-shape-1)/shape)
   return(level)
 }
-return_level_20 = lapply(monthly_fits, return_level) # 20 for testing
-return_level_100 = lapply(monthly_fits, return_level, period=100)
-return_level_50 = lapply(monthly_fits, return_level, period=50)
+return_level_20 = lapply(monthly_fits_pp, return_level) # 20 for testing
+return_level_100 = lapply(monthly_fits_pp, return_level, period=100)
+return_level_50 = lapply(monthly_fits_pp, return_level, period=50)
 plot(unlist(return_level_100),main="100 Year Return level, estimated with point process", xlab="Month",ylab="Return Level")
 plot(unlist(return_level_50),main="50 Year Return level, estimated with point process", xlab="Month",ylab="Return Level")
 
 
 ### Bayesian ####
-return_level_mcmc = function(posterior,period=20, plot=F){
+return_level_mcmc = function(posterior,period=20, plot=F) {
   u = mc.quant(posterior,p=1-1/period,lh="gev")
   label_mcmc_rl = sprintf("%s Year Return Level",period)
   if(plot) hist(u,nclass=20,prob=T,xlab=label_mcmc_rl, main = "Return Level Histogram")
@@ -644,21 +646,29 @@ for (i in 1:12) {
 
 ### Return level plot ####
 pdf(paste("../plots/100yr_return.pdf"), width = 7, height=5)
-plot(1:12, return_level_100, col="blue", ylim=c(0, 80000),
-     main="100 Year Return Levels", pch=19, ylab="PROD", xlab="Month")
-points(1:12, bivar_100yr_retlvl, col="red", pch=19)
-points(1:12, bayes_100yr_retlvl, col="green", pch=19)
-legend("topright", c("BAY", "POI", "BIV"), 
-       fill=c("green","blue","red"))
+plot(1:12, return_level_100, col="blue", ylim=c(0, 140000),
+     main="100 Year Return Levels", pch=17, ylab="PROD", xlab="Month")
+points(1:12, bivar_100yr_retlvl, col="red", pch=17)
+points(1:12, bayes_100yr_retlvl, col="green", pch=17)
+points(1:12, 
+       lapply(monthly_fits, return_level, period=100),
+       col="orange", pch=17)
+
+legend("topleft", c("BAY", "POI", "BIV", "MLE"), 
+       fill=c("green","blue","red", "orange"))
 dev.off()
 
 pdf(paste("../plots/50yr_return.pdf"), width = 7, height = 5)
 plot(1:12, return_level_50, col="blue", ylim=c(0, 80000),
-     main="50 Year Return Levels", pch=19, ylab="PROD", xlab="Month")
-points(1:12, bivar_50yr_retlvl, col="red", pch=19)
-points(1:12, bayes_50yr_retlvl, col="green", pch=19)
-legend("topright", c("BAY", "POI", "BIV"), 
-       fill=c("green","blue","red"))
+     main="50 Year Return Levels", pch=17, ylab="PROD", xlab="Month")
+points(1:12, bivar_50yr_retlvl, col="red", pch=17)
+points(1:12, bayes_50yr_retlvl, col="green", pch=17)
+points(1:12, 
+       lapply(monthly_fits, return_level, period=50),
+       col="orange", pch=17)
+
+legend("topleft", c("BAY", "POI", "BIV", "MLE"), 
+       fill=c("green","blue","red", "orange"))
 dev.off()
 
 #####
